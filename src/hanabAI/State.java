@@ -47,8 +47,7 @@ public class State implements Cloneable{
     discards = new Stack<Card>();
     fireworks = new HashMap<Colour,Stack<Card>>();
     for(Colour c: Colour.values())fireworks.put(c,new Stack<Card>());
-    if(players.length==5) hands = new Card[5][4];
-    else hands = new Card[players.length][5];
+    hands = new Card[players.length][players.length>3?4:5];
     for(int i = 0; i<hands.length; i++)
       for(int j = 0; j<hands[i].length; j++) 
         hands[i][j]=deck.pop();
@@ -76,11 +75,11 @@ public class State implements Cloneable{
        Stack<Card> fw = fireworks.get(c.getColour());
        if((fw.isEmpty() && c.getValue() == 1) || (!fw.isEmpty() && fw.peek().getValue()==c.getValue()-1)){
          s.fireworks.get(c.getColour()).push(c);
-         if(s.fireworks.get(c.getColour()).size()==5 && hints<8) hints++;
+         if(s.fireworks.get(c.getColour()).size()==5 && s.hints<8) s.hints++;
        }
        else{
          s.discards.push(c);
-         fuse--;
+         s.fuse--;
        }
        if(!deck.isEmpty()) s.hands[action.getPlayer()][action.getCard()] = deck.pop();
        if(deck.isEmpty() && finalAction==-1) s.finalAction = order+players.length;
@@ -136,6 +135,7 @@ public class State implements Cloneable{
       case PLAY:
         return (a.getCard()>=0 && a.getCard()<hands[nextPlayer].length); 
       case DISCARD: 
+        if(hints==8) throw new IllegalActionException("Discards cannot be made when there are 8 hint tokens");
         return (a.getCard()>=0 && a.getCard()<hands[nextPlayer].length);
       case HINT_COLOUR:
         if(hints==0 || a.getHintReceiver() <0 || a.getHintReceiver()>players.length || a.getHintReceiver() == a.getPlayer()) return false; 
@@ -261,6 +261,7 @@ public class State implements Cloneable{
    **/
   public int getScore(){
     int score = 0;
+    if(fuse==0) return score;
     for(Colour c: Colour.values()) 
       if(!fireworks.get(c).isEmpty())score+=fireworks.get(c).peek().getValue();
     return score;
