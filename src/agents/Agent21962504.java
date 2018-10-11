@@ -1,7 +1,7 @@
 package agents;
 import hanabAI.*;
 import java.util.*;
-
+// IS-MCTS
 
 public class Agent21962504 implements Agent {
 	
@@ -31,6 +31,10 @@ public class Agent21962504 implements Agent {
 		this.numCards = (numPlayers>3)?4:5;
 		this.knowncolours = new Colour[numPlayers][numCards];
 		this.knownvalues = new int[numPlayers][numCards];
+		for(int i=0;i<5;i++) 
+			for(int j=0; j<5 ;j++)
+				this.cardsLeftInPlay[i][j] = (j==0)?3:(j==5)?1:2;
+		firstaction = false;
 		
 	}
 	/*
