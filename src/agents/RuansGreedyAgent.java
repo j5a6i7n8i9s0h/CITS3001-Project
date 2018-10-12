@@ -1,7 +1,13 @@
 // to add
 // analyse my last hint
+// 2 step hints
+// still discards
+// wrong hint 
 // play best known if more than one is known 
-//
+// add known cards in hand to be considered in the can see function 
+
+//dumbass is newewst facepalm 
+
 
 
 package agents;
@@ -15,7 +21,9 @@ import hanabAI.IllegalActionException;
 import hanabAI.State;
 
 public class RuansGreedyAgent implements Agent{
-	  
+	 
+	private int totalCards = 50;
+	
 	private Colour[][] knowColours;
 	private int[][] knowValues;
 	private int[][] theyArrived;
@@ -105,12 +113,14 @@ public class RuansGreedyAgent implements Agent{
 	    	  
 	      }else{
 		      if(a==null) a = discardKnown(s);
-		      if(a==null) a = hint(s, (index+1)%numPlayers, bestHint);
+		      if(maxValue > 5){
+		    	  if(a==null) a = hint(s, (index+1)%numPlayers, bestHint);
+		      }
 	      }
 	      
-	      
-	      if(a==null) a = discardGuess(s);
-	      if(a==null) a = playGuess(s);
+	      if(a==null) a = discardOldest(s);
+	      if(a==null) a = hint(s, (index+1)%numPlayers, bestHint);
+	      if(a==null) a = guess(s);
 	      return a;
 	    }
 	    catch(IllegalActionException e){
@@ -126,6 +136,7 @@ public class RuansGreedyAgent implements Agent{
 	    			knowColours[index][i] = null;
 	    			knowValues[index][i] = 0;
 	    			theyArrived[index][i] = s.getOrder();
+	    			totalCards --;
 	    	        return new Action(index, toString(), ActionType.PLAY,i);
 	    		}
 	    	}
@@ -134,6 +145,7 @@ public class RuansGreedyAgent implements Agent{
 	    			knowColours[index][i] = null;
 	    			knowValues[index][i] = 0;
 	    			theyArrived[index][i] = s.getOrder();
+	    			totalCards --;
 	    	        return new Action(index, toString(), ActionType.PLAY,i);
 	    		}
 	    	}
@@ -142,6 +154,7 @@ public class RuansGreedyAgent implements Agent{
 	    			knowColours[index][i] = null;
 	    			knowValues[index][i] = 0;
 	    			theyArrived[index][i] = s.getOrder();
+	    			totalCards --;
 	    	        return new Action(index, toString(), ActionType.PLAY,i);
 	    		}
 	    	}
@@ -160,6 +173,7 @@ public class RuansGreedyAgent implements Agent{
 	        			knowColours[index][i] = null;
 		        		knowValues[index][i] = 0;
 		        		theyArrived[index][i] = s.getOrder();
+		        		totalCards --;
 		        		return new Action(index, toString(), ActionType.DISCARD,i);
 	        		}
 
@@ -169,7 +183,8 @@ public class RuansGreedyAgent implements Agent{
 						knowColours[index][i] = null;
 						knowValues[index][i] = 0;
 						theyArrived[index][i] = s.getOrder();
-				        return new Action(index, toString(), ActionType.PLAY,i);
+						totalCards --;
+				        return new Action(index, toString(), ActionType.DISCARD,i);
 					}
 				}
 				else if(knowColours[index][i] != null){
@@ -177,7 +192,8 @@ public class RuansGreedyAgent implements Agent{
 						knowColours[index][i] = null;
 						knowValues[index][i] = 0;
 						theyArrived[index][i] = s.getOrder();
-				        return new Action(index, toString(), ActionType.PLAY,i);
+						totalCards --;
+				        return new Action(index, toString(), ActionType.DISCARD,i);
 					}
 				}
 				else{
@@ -188,11 +204,7 @@ public class RuansGreedyAgent implements Agent{
 	      return null;
 	}
 
-	private Action hint(State s, int hint, int p) throws IllegalActionException{
-		
-		if(hint < 1){
-			return null;
-		}
+	private Action hint(State s, int p, int hint) throws IllegalActionException{
 		
 		if(s.getHintTokens() == 0){
 			return null;
@@ -212,6 +224,7 @@ public class RuansGreedyAgent implements Agent{
 		}else{
 			
 			for(int i = 0 ; i < numCards; i++){
+				if(s.getHand(p)[i] == null){continue;}
 				if(s.getHand(p)[i].getColour() == mapToColour(hint)){
 					match[i] = true;
 				}
@@ -222,8 +235,10 @@ public class RuansGreedyAgent implements Agent{
 	}
 	
 
-	private Action discardGuess(State s) throws IllegalActionException{
+	private Action discardOldest(State s) throws IllegalActionException{
 	
+		
+		if(s.getHintTokens() == 8){return null;}
 		int[] age = new int[numCards];
 		for(int i = 0; i < numCards; i ++){
 			age[i] = i;
@@ -233,30 +248,126 @@ public class RuansGreedyAgent implements Agent{
 			int key = theyArrived[index][i];
 			int j = i-1;
 			
-			while(j>=0 && theyArrived[index][age[j]]< key){
+			while(j>=0 && theyArrived[index][age[j]]> key){
 				age[j+1] = age[j];
 				j = j -1;
 			}
 			age[j+1] = i;
 		}
 		
-		boolean unhinted = false;
+		int oldest = -1;
+		//find oldest un-hinted card
+		for(int i = 0; i < numCards; i ++){
+			if(knowValues[index][age[i]] == 0 || knowColours[index][age[i]] == null){
+				oldest = age[i];
+			}
+		}
 		
-		
-		
-		return null;
+		if(oldest == -1){
+			return null;
+		}else{
+			return new Action(index, toString(), ActionType.DISCARD, oldest);
+		}
+
 	}
 
-	private Action playGuess(State s) throws IllegalActionException{
-		// TODO Auto-generated method stub
-		return null;
+	private Action guess(State s) throws IllegalActionException{
+		double probCorrectPlay = 0;
+		int play = -1;
+		
+		double probCorrectDiscard = 0;
+		int discard = -1;
+		
+		int numPlayable = 0;
+		int numDiscardable = 0;
+		int numTotal = 0;
+		
+		
+		for(int i = 0; i < numCards; i++){
+			if(knowColours[index][i] != null && knowValues[index][i] > 0){
+				numPlayable = 0;
+				numDiscardable = 0;
+				//since we wouldve played it already
+			}
+			else if(knowColours[index][i] != null){
+				Colour c = knowColours[index][i];
+				int top = topFw(s,c);
+				if(top < 5){
+					numPlayable = cardsLeftInPlay[mapColourToInt(c)][top] - howManySee(s, new Card(c, top+1));
+				}
+				for(int j = 0; j < top; j++){
+					numDiscardable += cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j + 1));
+				}
+				for(int j = 0; j < 5; j ++){
+					numTotal += cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j+1));
+				}
+			}
+			else if(knowValues[index][i] > 0){
+				int card = knowValues[index][i];
+				for(Colour c : Colour.values()){
+					if(card == topFw(s,c)+1){
+						numPlayable += cardsLeftInPlay[mapColourToInt(c)][card-1] - howManySee(s, new Card(c, card));
+					}
+					else if(card <= topFw(s,c)){
+						numDiscardable += cardsLeftInPlay[mapColourToInt(c)][card -1] - howManySee(s, new Card(c, card));
+					}
+					numTotal += cardsLeftInPlay[mapColourToInt(c)][card-1] - howManySee(s, new Card(c, card));
+				}
+			}
+			else{
+				for(Colour c : Colour.values()){
+					int top = topFw(s,c);
+					if(top == 5){continue;}
+					numPlayable += cardsLeftInPlay[mapColourToInt(c)][top] - howManySee(s, new Card(c, top+1));
+					for(int j = 0; j < top; j++){
+						numDiscardable += cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j + 1));
+					}
+					
+				}
+				numTotal = totalCards;
+				for(int p = 0; p < numPlayers; p ++){
+					if(p == index){continue;}
+					for(int j = 0; j < numCards; j ++){
+						if(s.getHand(p)[j] == null){continue;}
+						numTotal -= 1;
+					}
+				}
+			}
+			
+			double playProb = numPlayable/numTotal;
+			if(playProb > probCorrectPlay){
+				probCorrectPlay = playProb;
+				play = i;
+			}
+			
+			double disProb = numDiscardable/numTotal;
+			if(disProb > probCorrectDiscard){
+				probCorrectDiscard = disProb;
+				discard = i;
+			}
+			
+		}
+		
+
+		if(probCorrectDiscard >= probCorrectPlay || s.getFuseTokens() < 2){
+			knowColours[index][discard] = null;
+    		knowValues[index][discard] = 0;
+    		theyArrived[index][discard] = s.getOrder();
+    		totalCards --;
+			
+			return new Action(index, toString(),  ActionType.DISCARD, discard);
+		}else{
+			knowColours[index][play] = null;
+    		knowValues[index][play] = 0;
+    		theyArrived[index][play] = s.getOrder();
+    		totalCards --;
+			
+			return new Action(index, toString(),  ActionType.PLAY, play);
+		}
+	
 	}
 
 
-
-	
-	
-	
 	//helper classes and functions
 	
 	private int evaluateHint(State s, int p, int hint) {
@@ -265,7 +376,7 @@ public class RuansGreedyAgent implements Agent{
 		
 		//first check if it will reveal a playable card  worth 15.
 		
-		//then check if it will save a final in play card worth 7.
+		//then check if it will save a final in play card worth 5.
 		
 		//if it will reveal a can discard worth 4
 		
@@ -276,6 +387,9 @@ public class RuansGreedyAgent implements Agent{
 		score += 15*hintMakesPlayable(s,p,hint);
 		score += 4*hintMakesDiscardable(s,p,hint);
 		
+		
+		
+		
 		boolean[] finals = finalCards(s,p);
 		
 		for(int i = 0 ; i < numCards; i++){
@@ -283,14 +397,14 @@ public class RuansGreedyAgent implements Agent{
 				if(knowValues[p][i] == 0 && s.getHand(p)[i].getValue() == (hint-4)){
 					score+= 1;
 					if(finals[i]){
-						score+=7;
+						score+=5;
 					}
 				}
 			}else{
 				if(knowColours[p][i] == null && s.getHand(p)[i].getColour() == mapToColour(hint)){
 					score+= 1;
 					if(finals[i]){
-						score+=7;
+						score+=5;
 					}
 				}
 			}
@@ -329,12 +443,14 @@ public class RuansGreedyAgent implements Agent{
 		
 		if(hint > 4){
 			for(int i = 0; i < numCards; i ++){
+				if(s.getHand(p)[i] == null){continue;}
 				if(s.getHand(p)[i].getValue() == (hint - 4)){
 					tempV[p][i] = hint - 4;
 				}
 			}
 		}else{
 			for(int i = 0; i < numCards; i ++){
+				if(s.getHand(p)[i] == null){continue;}
 				if(s.getHand(p)[i].getColour() == mapToColour(hint)){
 					tempC[p][i] = mapToColour(hint);
 				}
@@ -398,12 +514,14 @@ public class RuansGreedyAgent implements Agent{
 		
 		if(hint > 4){
 			for(int i = 0; i < numCards; i ++){
+				if(s.getHand(p)[i] == null){continue;}
 				if(s.getHand(p)[i].getValue() == (hint - 4)){
 					tempV[p][i] = hint - 4;
 				}
 			}
 		}else{
 			for(int i = 0; i < numCards; i ++){
+				if(s.getHand(p)[i] == null){continue;}
 				if(s.getHand(p)[i].getColour() == mapToColour(hint)){
 					tempC[p][i] = mapToColour(hint);
 				}
@@ -442,7 +560,8 @@ public class RuansGreedyAgent implements Agent{
 		boolean[] finals = new boolean[numCards];
 		for(int i = 0; i < numCards; i++){
 			Card c = s.getHand(p)[i];
-			int inPlay = cardsLeftInPlay[mapColourToInt(c.getColour())][c.getValue()];
+			if(c == null){continue;}
+			int inPlay = cardsLeftInPlay[mapColourToInt(c.getColour())][c.getValue()-1];
 			int iSee = howManySee(s, c);
 			if(inPlay == 1|| iSee == 1){
 				finals[i] = true;
@@ -455,27 +574,27 @@ public class RuansGreedyAgent implements Agent{
 	
 	private int topFw (State s, Colour c){
 		java.util.Stack<Card> fw = s.getFirework(c);
-	    if (fw.size()==5) return -1;
-	    else return (fw.size()+1);
+	    if (fw.size()==5) return 5;
+	    else return (fw.size());
 	}
 	
 	private boolean playable(State s, Colour c, int i) {
 	    int top = topFw(s,c);
-	    return top == i;
+	    return top == i-1;
 	}
 	
 	private boolean playable(State s, int i) {
 		boolean[] canPlay = new boolean[5];
 		
 		for(Colour c: Colour.values()){
-			canPlay[mapColourToInt(c)] = (topFw(s,c) == i);
+			canPlay[mapColourToInt(c)] = (topFw(s,c) == i-1);
 		}
 		
 		boolean playable = true;
 		
 		for(int j = 0 ; j < 5; j++){
 			if(!canPlay[j]){
-				int inPlay = cardsLeftInPlay[j][i] - howManySee(s, new Card( mapToColour(j), i));
+				int inPlay = cardsLeftInPlay[j][i-1] - howManySee(s, new Card( mapToColour(j), i));
 				if(inPlay != 0){playable = false;}
 			}
 		}
@@ -497,7 +616,7 @@ public class RuansGreedyAgent implements Agent{
 		for(int j = 0 ; j < 5; j++){
 			if(j != toPlay){
 				int inPlay = cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j+1));
-				if(!(inPlay == 0)){playable = false;}
+				if(inPlay != 0){playable = false;}
 			}
 		}
 		
@@ -507,21 +626,21 @@ public class RuansGreedyAgent implements Agent{
 
 	private boolean discardable(State s, Colour c, int i) {
 	    int top = topFw(s,c);
-	    return top > i;
+	    return top >= i;
 	}
 	
 	private boolean discardable(State s, int i) {
 		boolean[] canDiscard = new boolean[5];
 		
 		for(Colour c: Colour.values()){
-			canDiscard[mapColourToInt(c)] = (topFw(s,c) > i);
+			canDiscard[mapColourToInt(c)] = (topFw(s,c) >= i);
 		}
 		
 		boolean discardable = true;
 		
 		for(int j = 0 ; j < 5; j++){
 			if(!canDiscard[j]){
-				int inPlay = cardsLeftInPlay[j][i] - howManySee(s, new Card( mapToColour(j), i));
+				int inPlay = cardsLeftInPlay[j][i-1] - howManySee(s, new Card( mapToColour(j), i));
 				if(inPlay != 0){discardable = false;}
 			}
 		}
@@ -552,14 +671,13 @@ public class RuansGreedyAgent implements Agent{
 	
 	
 	
-	
-	
 	private int howManySee(State s, Card c){
 		
 		int count = 0;
 		for(int i = 0; i < numPlayers; i ++){
 			if(i == index){continue;}
 			for(int j = 0;  j < numCards; j ++){
+				if(s.getHand(i)[j] == null){continue;}
 				if(s.getHand(i)[j].equals(c)){
 					count++;
 				}
@@ -585,9 +703,10 @@ public class RuansGreedyAgent implements Agent{
 	              }
 	            }
 	          }else{
-	        	 Card c =  t.getHand(a.getPlayer())[a.getCard()];
-	        	 cardsLeftInPlay[mapColourToInt(c.getColour())][c.getValue()]--;
+	        	 Card c =  t.getPreviousState().getHand(a.getPlayer())[a.getCard()];
+	        	 cardsLeftInPlay[mapColourToInt(c.getColour())][c.getValue()-1]--;
 	        	 theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
+	        	 totalCards--;
 	          }
 	         
 	          t = t.getPreviousState();
