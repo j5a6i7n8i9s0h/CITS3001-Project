@@ -932,48 +932,164 @@ public Action doAction(MyState s) {
 	}
 	
 	public int discardcard(int i) {
-		i-=this.numCards;
+		i=i%this.numCards;
 		Colour c = this.knownColours[this.nextPlayer][i];
 		int value = this.knownValues[this.nextPlayer][i];
+		int order = this.theyArrived[this.nextPlayer][i];
+		if(value==5)
+			return Integer.MIN_VALUE;
 		if(c!=null && value!=0) //both is known
 		{
 			if(this.fireworks.get(c).peek().getValue()>=value) 
 				return Integer.MAX_VALUE;
-			if(value==5)
-				return Integer.MIN_VALUE;
 			return (value==1?3:2)*this.cardsLeftInDeck[this.mapColourToInt(c)][value-1];
 			// Future <=  consider other peoples hands 
 		}
 		else if(c!=null) //only colour is known 
 		{
 			Stack<Card> s= this.fireworks.get(c);
+			if(s.peek().getValue()==5)
+				return Integer.MAX_VALUE;
 			int CardsOfThisColour[] = this.cardsLeftInDeck[this.mapColourToInt(c)];
-			return 
+			int couldkeep =0;
+			for(int j=s.peek().getValue()-1;j<5;j++)
+				couldkeep+=CardsOfThisColour[j];
+			return (this.order-order)*(5-s.peek().getValue())*couldkeep;
 		}
 		else if(value!=0) //only value is known
 		{
-			
+//			boolean[] chance = new boolean[5];
+//			for(Colour col:Colour.values())
+//			{
+//				this.cardsLeftInDeck[this.mapColourToInt(col)][value-1];
+//				this.fireworks.get(col).peek().getValue()
+//			}
+			return (this.order-order)*(value==1?3:2);
 		}
 		else // neither is known
 		{
-			
+			return this.order-order;
 		}
 	}
 	
-	public ArrayList<Action> getBestPossibleMoves() {
+	public int playcard(int i) {
+		i=i%this.numCards;
+		Colour c = this.knownColours[this.nextPlayer][i];
+		int value = this.knownValues[this.nextPlayer][i];
+		if(c!=null && value!=0)
+		{
+			return (playable(this,c,value) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
+		}
+		else if(c!=null) // only colour known
+		{
+			return (playable(this,c) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
+		}
+		else if(value!=0) // only val known
+		{
+			return (playable(this,value) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
+		}
+		else
+		{
+			return Integer.MIN_VALUE;
+		}
+	}
+	
+	public int hintCardByValue(int i) {
+		int playerToHint = (this.nextPlayer + ((int)i/this.numCards*2))%this.numPlayers;
+		int card = i%this.numCards;
+		Card c = this.hands[playerToHint][card];
+		int k=1;
+		for(Card s:this.hands[playerToHint]) {
+			if(s.getValue()==c.getValue()) k++ ;
+		}
+		if(hints>0) {
+			if(c.getValue()==5||playable(this,c.getColour(),c.getValue()))
+				return Integer.MAX_VALUE;
+			for(Colour s:Colour.values())
+			{
+				if(this.fireworks.get(s).peek().getValue()-c.getValue()==-1)
+					return Integer.MIN_VALUE;
+			}
+			return k*this.cardsLeftInDeck[this.mapColourToInt(c.getColour())][c.getValue()-1]*(this.theyArrived[playerToHint][card]);
+		}
+		return Integer.MIN_VALUE;
+	}
+	
+	public int hintCardByColour(int i) {
+		int playerToHint = (this.nextPlayer + ((int)i/this.numCards*2))%this.numPlayers;
+		int card = i%this.numCards;
+		Card c = this.hands[playerToHint][card];
+		int k=1;
+		for(Card s:this.hands[playerToHint]) {
+			if(s.getValue()==c.getValue()) k++ ;
+		}
+		if(hints>0) {
+			//wasnt too sure how good colour hinting is
+			return k*this.cardsLeftInDeck[this.mapColourToInt(c.getColour())][c.getValue()-1]*(this.theyArrived[playerToHint][card]);
+		}
+		return Integer.MIN_VALUE;
+	}
+	
+	public ArrayList<Action> getBestPossibleMoves() throws IllegalActionException {
+		ArrayList<Action> bestmoves = new ArrayList<Action>();
 		for(int i = 0; i<this.numCards*2*this.numPlayers;i++)
 		{
 			//0-4 (this.numcards-1) , play card i 
 			// 5-9 (this.numcards - this.numcards-1), discard card i 
-			// 
+			//
+			Action temp;
 			int score;
-			if(i>=0 && i<this.numCards)
-				score=0;//playcard();
-			if(i>=this.numCards && i<this.numCards*2)
+			if(i>=0 && i<this.numCards) {
+				score=playcard(i);
+				if(score>this.order*1.5)
+				{
+					bestmoves.add(new Action(this.nextPlayer,
+							this.players[this.nextPlayer],
+							ActionType.PLAY,i%5));
+				}
+			}else if(i>=this.numCards && i<this.numCards*2) {
 				score=discardcard(i);
-			
+				if(score>this.order*1.5)
+				{
+					bestmoves.add(new Action(this.nextPlayer,
+							this.players[this.nextPlayer],
+							ActionType.DISCARD,i%5));
+				}
+			}else{
+				int j=(int)i/this.numCards;
+				score= (j%2==0?hintCardByValue(i):hintCardByColour(i));
+				int playerToHint = (this.nextPlayer + ((int)i/this.numCards*2))%this.numPlayers;
+				int card = i%this.numCards;
+				Card c = this.hands[playerToHint][card];				if(score>this.order*1.5)
+				if(score>this.order*1.5)
+				{
+					if(j%2==0)
+					{
+						boolean[] cards = new boolean[this.numCards];
+						for(int k=0;k<this.numCards;k++)
+						{
+							cards[k]=this.hands[playerToHint][k].getValue()==c.getValue();
+								
+						}
+						bestmoves.add(new Action(this.nextPlayer,
+								this.players[this.nextPlayer],
+								ActionType.HINT_VALUE,playerToHint,cards,c.getValue()));
+					}
+					else
+					{
+						boolean[] cards = new boolean[this.numCards];
+						for(int k=0;k<this.numCards;k++)
+						{
+							cards[k]=this.hands[playerToHint][k].getColour()==c.getColour();
+								
+						}
+						bestmoves.add(new Action(this.nextPlayer,
+								this.players[this.nextPlayer],
+								ActionType.HINT_COLOUR,playerToHint,cards,c.getColour()));
+					}
+				}
+			}
 		}
-		
-		return null;
+		return bestmoves;
 	}
 }

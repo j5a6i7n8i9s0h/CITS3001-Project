@@ -37,24 +37,11 @@ public class agent implements Agent{
 	public void init(State s) {		
 	    index = s.getNextPlayer();
 	    firstAction = false;
-		
-
-	    
 		numPlayers = s.getPlayers().length;
-	    if(numPlayers>3){
-	    	numCards = 4;
-	    	knowColours = new Colour[numPlayers][4];
-	    	knowValues = new int[numPlayers][4];
-	    	theyArrived = new int[numPlayers][4];
-	      
-	    }
-	    else{
-	    	numCards = 5;
-	    	knowColours = new Colour[numPlayers][5];
-	    	knowValues = new int[numPlayers][5];
-	    	theyArrived = new int[numPlayers][5];
-	      
-	    }
+	    numCards = (numPlayers>3?4:5);
+	    knowColours = new Colour[numPlayers][numCards];
+    	knowValues = new int[numPlayers][numCards];
+    	theyArrived = new int[numPlayers][numCards];
 	    
 	    cardsLeftInDeck = new int[5][5];
 	    for(int i = 0; i < 5; i ++){
