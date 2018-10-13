@@ -12,11 +12,11 @@ public class MCTS {
 	Node root;
 	
 	public MCTS(MyState s){
-		root = new Node(null, s);
+		root = new Node(null, s, null);
 		
 	}
 	
-	public void MCTSsearch(){
+	public void MCTSsearch() throws CloneNotSupportedException, IllegalActionException{
 		long timeLimit = System.currentTimeMillis() + 990;
 		
 		while(System.currentTimeMillis() < timeLimit){
@@ -24,19 +24,21 @@ public class MCTS {
 			currentNode = Select(root);
 			BackPropogation(currentNode, currentNode.state.Rollout());
 		}
-		
-
 	}
 
-	private void BackPropogation(Node currentNode, Object rollout) {
-		// TODO Auto-generated method stub
-		
+	private void BackPropogation(Node currentNode, int rollout) {
+		while(currentNode.parent!=null)
+		{
+			currentNode.score+=rollout;
+			currentNode = currentNode.parent;
+		}
 	}
 
 
 	private Node Expand(Node lastNode) {
+		ArrayList<Action> unexp = lastNode.getUnexp();
+		return lastNode;
 		
-		return null;
 	}
 
 	private Node bestChild(Node currentNode) {

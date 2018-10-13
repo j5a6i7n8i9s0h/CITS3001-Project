@@ -1,12 +1,38 @@
+//for(int i = 0; i < 2*numcards + (10*(numplayers-1); i++){
+//  int score = 0;
+//  score +=getPlayValue(i); // if fuse < 2 and its not 100 playable return 0, otherwise return probability of success 30*prob
+//  score +=getDiscardValue(i); //copy above
+//  score +=getHintValue(i); //done with bug 
+//  
+//  if(score > 5){
+//    add to expandable;
+//    
+//    if i = 3, action(play card 3) -> expandable
+//  }
+//}
+//
+//
+//
+//0-4 = play index
+//5-9 = discard inex
+//>9 
+//  first 10 is for player next
+//    first 5 is respective colour
+//    	5 i respective number
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 package agents;
 
 import java.util.*;
-import hanabAI.Action;
-import hanabAI.ActionType;
-import hanabAI.Card;
-import hanabAI.Colour;
-import hanabAI.IllegalActionException;
-import hanabAI.State;
+import hanabAI.*;
 
 public class MyState implements Cloneable {
 
@@ -48,11 +74,11 @@ public class MyState implements Cloneable {
 	 * The previous State of the game, so that all states are accessible back to the
 	 * first state (with a null previous state)
 	 **/
-	private MyState previousState;
+	//private MyState previousState;
 	/**
 	 * A list of all moves made so far in the game, in the order they were played
 	 **/
-	private Action previousAction;
+	//private Action previousAction;
 	/** The index of the next player to move **/
 	private int nextPlayer = -1;
 	/** The fnal play of the game (for when the deck runs out) **/
@@ -223,6 +249,9 @@ public class MyState implements Cloneable {
 					s.finalAction = order + players.length;
 				s.hands[action.getPlayer()][action.getCard()] = null;
 			}
+			cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue()-1]--;
+			theyArrived[action.getPlayer()][action.getPlayer()] = s.order;
+			totalCards--;
 			break;
 		case DISCARD:
 			c = hands[action.getPlayer()][action.getCard()];
@@ -236,51 +265,26 @@ public class MyState implements Cloneable {
 			}
 			if (hints < 8)
 				s.hints++;
+			
+			cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue()-1]--;
+			theyArrived[action.getPlayer()][action.getPlayer()] = s.order;
+			totalCards--;
 			break;
 		case HINT_COLOUR:
+			knownColours[action.getHintReceiver()][action.getCard()]=action.getColour();
 			s.hints--;
 			break;
 		case HINT_VALUE:
+			knownValues[action.getHintReceiver()][action.getCard()]=action.getValue();
 			s.hints--;
 			break;
 		default:
 			break;
 		}
-		
-		/*
-		 * try {
-			State t = (State) s.clone();
-			for (int i = 0; i < Math.min(numPlayers - 1, s.getOrder()); i++) {
-				Action a = t.getPreviousAction();
-				if ((a.getType() == ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)) {
-					boolean[] hints = t.getPreviousAction().getHintedCards();
-					for (int j = 0; j < hints.length; j++) {
-						if (hints[j]) {
-							if (a.getType() == ActionType.HINT_COLOUR)
-								knownColours[a.getHintReceiver()][j] = a.getColour();
-							else
-								knownValues[a.getHintReceiver()][j] = a.getValue();
-						}
-					}
-				} else {
-					Card c = t.getPreviousState().getHand(a.getPlayer())[a.getCard()];
-					cardsLeftInPlay[mapColourToInt(c.getColour())][c.getValue() - 1]--;
-					theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
-					totalCards--;
-				}
-
-				t = t.getPreviousState();
-			}
-		} catch (IllegalActionException e) {
-			e.printStackTrace();
-		}
-		 * 
-		 * 
-		 * */
 		s.order++;
-		s.previousAction = action;
+		//s.previousAction = action;
 		s.nextPlayer = (nextPlayer + 1) % players.length;
-		s.previousState = this;
+		//s.previousState = this;
 		return s;
 	}
 
@@ -297,12 +301,11 @@ public class MyState implements Cloneable {
 	public int getNextPlayer() {return (gameOver()?-1:nextPlayer);}
 	
 	public boolean gameOver() {
-		// TODO Auto-generated method stub
 		return (order == finalAction || fuse == 0 || getScore() == 25);
 	}
 
 	public int Rollout() throws CloneNotSupportedException, IllegalActionException {
-    int score = 0;
+
     MyState s = (MyState) this.clone();
 	    while(!s.gameOver())
 	      s = s.nextState(doAction(s), deck);
@@ -311,7 +314,7 @@ public class MyState implements Cloneable {
 
 public Action doAction(MyState s) {
 		index = s.getNextPlayer();
-		updateLastActions(s);
+		//updateLastActions(s);
 
 		int maxValue = 0;
 		int bestHint = -1;
@@ -456,9 +459,9 @@ public Action doAction(MyState s) {
 		}
 	}
 
-	private Action discardOldest(State s) throws IllegalActionException {
+	private Action discardOldest(MyState s) throws IllegalActionException {
 
-		if (s.getHintTokens() == 8) {
+		if (s.hints == 8) {
 			return null;
 		}
 		int[] age = new int[numCards];
@@ -493,7 +496,7 @@ public Action doAction(MyState s) {
 
 	}
 
-	private Action guess(State s) throws IllegalActionException {
+	private Action guess(MyState s) throws IllegalActionException {
 		double probCorrectPlay = 0;
 		int play = -1;
 
@@ -513,24 +516,23 @@ public Action doAction(MyState s) {
 				Colour c = knownColours[index][i];
 				int top = topFw(s, c);
 				if (top < 5) {
-					numPlayable = cardsLeftInPlay[mapColourToInt(c)][top] - howManySee(s, new Card(c, top + 1));
+					numPlayable = cardsLeftInDeck[mapColourToInt(c)][top];
 				}
 				for (int j = 0; j < top; j++) {
-					numDiscardable += cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j + 1));
+					numDiscardable += cardsLeftInDeck[mapColourToInt(c)][j];
 				}
 				for (int j = 0; j < 5; j++) {
-					numTotal += cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j + 1));
+					numTotal += cardsLeftInDeck[mapColourToInt(c)][j];
 				}
 			} else if (knownValues[index][i] > 0) {
 				int card = knownValues[index][i];
 				for (Colour c : Colour.values()) {
 					if (card == topFw(s, c) + 1) {
-						numPlayable += cardsLeftInPlay[mapColourToInt(c)][card - 1] - howManySee(s, new Card(c, card));
+						numPlayable += cardsLeftInDeck[mapColourToInt(c)][card - 1];
 					} else if (card <= topFw(s, c)) {
-						numDiscardable += cardsLeftInPlay[mapColourToInt(c)][card - 1]
-								- howManySee(s, new Card(c, card));
+						numDiscardable += cardsLeftInDeck[mapColourToInt(c)][card - 1];
 					}
-					numTotal += cardsLeftInPlay[mapColourToInt(c)][card - 1] - howManySee(s, new Card(c, card));
+					numTotal += cardsLeftInDeck[mapColourToInt(c)][card - 1];
 				}
 			} else {
 				for (Colour c : Colour.values()) {
@@ -538,9 +540,9 @@ public Action doAction(MyState s) {
 					if (top == 5) {
 						continue;
 					}
-					numPlayable += cardsLeftInPlay[mapColourToInt(c)][top] - howManySee(s, new Card(c, top + 1));
+					numPlayable += cardsLeftInDeck[mapColourToInt(c)][top];
 					for (int j = 0; j < top; j++) {
-						numDiscardable += cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j + 1));
+						numDiscardable += cardsLeftInDeck[mapColourToInt(c)][j];
 					}
 
 				}
@@ -550,7 +552,7 @@ public Action doAction(MyState s) {
 						continue;
 					}
 					for (int j = 0; j < numCards; j++) {
-						if (s.getHand(p)[j] == null) {
+						if (s.hands[p][j] == null) {
 							continue;
 						}
 						numTotal -= 1;
@@ -572,17 +574,17 @@ public Action doAction(MyState s) {
 
 		}
 
-		if (probCorrectDiscard >= probCorrectPlay || s.getFuseTokens() < 2) {
+		if (probCorrectDiscard >= probCorrectPlay || s.fuse < 2) {
 			knownColours[index][discard] = null;
 			knownValues[index][discard] = 0;
-			theyArrived[index][discard] = s.getOrder();
+			theyArrived[index][discard] = s.order;
 			totalCards--;
 
 			return new Action(index, toString(), ActionType.DISCARD, discard);
 		} else {
 			knownColours[index][play] = null;
 			knownValues[index][play] = 0;
-			theyArrived[index][play] = s.getOrder();
+			theyArrived[index][play] = s.order;
 			totalCards--;
 
 			return new Action(index, toString(), ActionType.PLAY, play);
@@ -613,14 +615,14 @@ public Action doAction(MyState s) {
 
 		for (int i = 0; i < numCards; i++) {
 			if (hint > 4) {
-				if (knownValues[p][i] == 0 && s.getHand(p)[i].getValue() == (hint - 4)) {
+				if (knownValues[p][i] == 0 && s.hands[p][i].getValue() == (hint - 4)) {
 					score += 1;
 					if (finals[i]) {
 						score += 5;
 					}
 				}
 			} else {
-				if (knownColours[p][i] == null && s.getHand(p)[i].getColour() == mapToColour(hint)) {
+				if (knownColours[p][i] == null && s.hands[p][i].getColour() == mapToColour(hint)) {
 					score += 1;
 					if (finals[i]) {
 						score += 5;
@@ -632,7 +634,7 @@ public Action doAction(MyState s) {
 		return score;
 	}
 
-	private int hintMakesDiscardable(State s, int p, int hint) {
+	private int hintMakesDiscardable(MyState s, int p, int hint) {
 		int discardBefore = 0;
 		int discardAfter = 0;
 
@@ -659,19 +661,19 @@ public Action doAction(MyState s) {
 
 		if (hint > 4) {
 			for (int i = 0; i < numCards; i++) {
-				if (s.getHand(p)[i] == null) {
+				if (s.hands[p][i] == null) {
 					continue;
 				}
-				if (s.getHand(p)[i].getValue() == (hint - 4)) {
+				if (s.hands[p][i].getValue() == (hint - 4)) {
 					tempV[p][i] = hint - 4;
 				}
 			}
 		} else {
 			for (int i = 0; i < numCards; i++) {
-				if (s.getHand(p)[i] == null) {
+				if (s.hands[p][i] == null) {
 					continue;
 				}
-				if (s.getHand(p)[i].getColour() == mapToColour(hint)) {
+				if (s.hands[p][i].getColour() == mapToColour(hint)) {
 					tempC[p][i] = mapToColour(hint);
 				}
 			}
@@ -729,7 +731,7 @@ public Action doAction(MyState s) {
 				if (s.hands[p][i] == null) {
 					continue;
 				}
-				if (ss.hands[p][i].getValue() == (hint - 4)) {
+				if (s.hands[p][i].getValue() == (hint - 4)) {
 					tempV[p][i] = hint - 4;
 				}
 			}
@@ -765,7 +767,7 @@ public Action doAction(MyState s) {
 		return playableAfter - playableBefore;
 	}
 
-	private boolean[] finalCards(State s, int p) {
+	private boolean[] finalCards(MyState s, int p) {
 
 		if (p == index) {
 			return null;
@@ -773,13 +775,12 @@ public Action doAction(MyState s) {
 
 		boolean[] finals = new boolean[numCards];
 		for (int i = 0; i < numCards; i++) {
-			Card c = s.getHand(p)[i];
+			Card c = s.hands[p][i];
 			if (c == null) {
 				continue;
 			}
-			int inPlay = cardsLeftInPlay[mapColourToInt(c.getColour())][c.getValue() - 1];
-			int iSee = howManySee(s, c);
-			if (inPlay == 1 || iSee == 1) {
+			int inPlay = cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue() - 1];
+			if (inPlay == 1) {
 				finals[i] = true;
 			} else {
 				finals[i] = false;
@@ -812,7 +813,7 @@ public Action doAction(MyState s) {
 
 		for (int j = 0; j < 5; j++) {
 			if (!canPlay[j]) {
-				int inPlay = cardsLeftInPlay[j][i - 1] - howManySee(s, new Card(mapToColour(j), i));
+				int inPlay = cardsLeftInDeck[j][i - 1];
 				if (inPlay != 0) {
 					playable = false;
 				}
@@ -822,7 +823,7 @@ public Action doAction(MyState s) {
 		return playable;
 	}
 
-	private boolean playable(State s, Colour c) {
+	private boolean playable(MyState s, Colour c) {
 
 		int toPlay;
 
@@ -836,7 +837,7 @@ public Action doAction(MyState s) {
 
 		for (int j = 0; j < 5; j++) {
 			if (j != toPlay) {
-				int inPlay = cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j + 1));
+				int inPlay = cardsLeftInDeck[mapColourToInt(c)][j];
 				if (inPlay != 0) {
 					playable = false;
 				}
@@ -862,7 +863,7 @@ public Action doAction(MyState s) {
 
 		for (int j = 0; j < 5; j++) {
 			if (!canDiscard[j]) {
-				int inPlay = cardsLeftInPlay[j][i - 1] - howManySee(s, new Card(mapToColour(j), i));
+				int inPlay = cardsLeftInDeck[j][i - 1];
 				if (inPlay != 0) {
 					discardable = false;
 				}
@@ -886,7 +887,7 @@ public Action doAction(MyState s) {
 
 		for (int j = 0; j < 5; j++) {
 			if (j >= toPlay) {
-				int inPlay = cardsLeftInPlay[mapColourToInt(c)][j] - howManySee(s, new Card(c, j + 1));
+				int inPlay = cardsLeftInDeck[mapColourToInt(c)][j];
 				if (inPlay != 0) {
 					discardable = false;
 				}
@@ -894,55 +895,6 @@ public Action doAction(MyState s) {
 		}
 
 		return discardable;
-	}
-
-	private int howManySee(MyState s, Card c) {
-
-		int count = 0;
-		for (int i = 0; i < numPlayers; i++) {
-			if (i == index) {
-				continue;
-			}
-			for (int j = 0; j < numCards; j++) {
-				if (s.hands[i][j] == null) {
-					continue;
-				}
-				if (s.hands[i][j].equals(c)) {
-					count++;
-				}
-			}
-		}
-
-		return count;
-	}
-
-	private void updateLastActions(MyState s) {
-		try {
-			State t = (State) s.clone();
-			for (int i = 0; i < Math.min(numPlayers - 1, s.order); i++) {
-				Action a = t.getPreviousAction();
-				if ((a.getType() == ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)) {
-					boolean[] hints = t.getPreviousAction().getHintedCards();
-					for (int j = 0; j < hints.length; j++) {
-						if (hints[j]) {
-							if (a.getType() == ActionType.HINT_COLOUR)
-								knownColours[a.getHintReceiver()][j] = a.getColour();
-							else
-								knownValues[a.getHintReceiver()][j] = a.getValue();
-						}
-					}
-				} else {
-					Card c = t.getPreviousState().getHand(a.getPlayer())[a.getCard()];
-					cardsLeftInPlay[mapColourToInt(c.getColour())][c.getValue() - 1]--;
-					theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
-					totalCards--;
-				}
-
-				t = t.getPreviousState();
-			}
-		} catch (IllegalActionException e) {
-			e.printStackTrace();
-		}
 	}
 
 	int mapColourToInt(Colour c) {
@@ -977,5 +929,51 @@ public Action doAction(MyState s) {
 		default:
 			return null;
 		}
+	}
+	
+	public int discardcard(int i) {
+		i-=this.numCards;
+		Colour c = this.knownColours[this.nextPlayer][i];
+		int value = this.knownValues[this.nextPlayer][i];
+		if(c!=null && value!=0) //both is known
+		{
+			if(this.fireworks.get(c).peek().getValue()>=value) 
+				return Integer.MAX_VALUE;
+			if(value==5)
+				return Integer.MIN_VALUE;
+			return (value==1?3:2)*this.cardsLeftInDeck[this.mapColourToInt(c)][value-1];
+			// Future <=  consider other peoples hands 
+		}
+		else if(c!=null) //only colour is known 
+		{
+			Stack<Card> s= this.fireworks.get(c);
+			int CardsOfThisColour[] = this.cardsLeftInDeck[this.mapColourToInt(c)];
+			return 
+		}
+		else if(value!=0) //only value is known
+		{
+			
+		}
+		else // neither is known
+		{
+			
+		}
+	}
+	
+	public ArrayList<Action> getBestPossibleMoves() {
+		for(int i = 0; i<this.numCards*2*this.numPlayers;i++)
+		{
+			//0-4 (this.numcards-1) , play card i 
+			// 5-9 (this.numcards - this.numcards-1), discard card i 
+			// 
+			int score;
+			if(i>=0 && i<this.numCards)
+				score=0;//playcard();
+			if(i>=this.numCards && i<this.numCards*2)
+				score=discardcard(i);
+			
+		}
+		
+		return null;
 	}
 }
