@@ -1,5 +1,9 @@
 package MCST;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
+
 import hanabAI.Action;
 import hanabAI.ActionType;
 import hanabAI.Agent;
@@ -27,12 +31,16 @@ public class agent implements Agent{
 	private int numCards;
 	private int index;
 
-	  
 	@Override
 	public String toString(){return "MCTS";}
 		
 	public void init(State s) {		
-	    numPlayers = s.getPlayers().length;
+	    index = s.getNextPlayer();
+	    firstAction = false;
+		
+
+	    
+		numPlayers = s.getPlayers().length;
 	    if(numPlayers>3){
 	    	numCards = 4;
 	    	knowColours = new Colour[numPlayers][4];
@@ -71,13 +79,13 @@ public class agent implements Agent{
 	    	}
 	    }
 	    
-	    index = s.getNextPlayer();
-	    firstAction = false;
 	}
 	
 	private void updateLastActions(State s) {
-	    try{
+	    
+		try{
 	        State t = (State) s.clone();
+
 	        for(int i = 0; i<Math.min(numPlayers-1,s.getOrder());i++){
 	          Action a = t.getPreviousAction();
 	          if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)){
@@ -91,14 +99,38 @@ public class agent implements Agent{
 	              }
 	            }
 	          }else{
-	        	 Card c =  t.getHand(a.getPlayer())[a.getCard()];
-	        	 cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue()-1]--;
+	        	 Card replaced =  t.getHand(a.getPlayer())[a.getCard()];
+	        	 if(replaced != null){
+	        	 cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1]--;
 	        	 theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
-	        	 totalCards--;
+	        	 //totalCards--;
+	        	 }
+
 	          }
 	         
 	          t = t.getPreviousState();
 	        }
+	        Action a = t.getPreviousAction();
+			if(a == null){return;}
+			
+			
+	        if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)){
+	        	//already up to date
+	        }else{
+	        	Stack<Card> temp = t.getDiscards();
+	        	
+	        	if(t.getPreviousState().getDiscards().size() < temp.size()){
+	        		cardsLeftInDeck[mapColourToInt(temp.peek().getColour())][temp.peek().getValue()-1]--;
+	        	}else{
+	        		for(Colour c: Colour.values()){
+	        			Stack<Card> tempFw = t.getFirework(c);
+	    	        	if(t.getPreviousState().getFirework(c).size() < tempFw.size()){
+	    	        		cardsLeftInDeck[mapColourToInt(tempFw.peek().getColour())][tempFw.peek().getValue()-1]--;
+	    	        	}
+	    	        }
+	        	}
+	        }
+	        
 	      }
 	      catch(IllegalActionException e){e.printStackTrace();}
 	}
@@ -135,6 +167,9 @@ public class agent implements Agent{
 		updateLastActions(s);
 		
 		 try {
+			if(s.getHintTokens() > 7){
+				return new Action(index, toString(), ActionType.PLAY,0);	
+			}
 			return new Action(index, toString(), ActionType.DISCARD,0);
 		} catch (IllegalActionException e) {
 			return null;
