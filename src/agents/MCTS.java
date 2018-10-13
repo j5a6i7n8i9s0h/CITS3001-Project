@@ -1,4 +1,4 @@
-package MCST;
+package agents;
 import hanabAI.*;
 import java.util.*;
 // IS-MCTS

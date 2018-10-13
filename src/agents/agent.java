@@ -1,4 +1,4 @@
-package MCST;
+package agents;
 
 public class agent {
 	static final int MAX_SCORE = 25;

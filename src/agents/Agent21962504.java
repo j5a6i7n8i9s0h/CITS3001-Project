@@ -8,7 +8,7 @@ public class Agent21962504 implements Agent {
 	private Colour[][] knowncolours;
 	private int[][] knownvalues;
 	private int[][] cardsLeftInPlay;
-	
+	private boolean[][] canDiscard;
 	private int numPlayers,numCards;
 	
 	private static double explore = Math.sqrt(2.0);
@@ -21,8 +21,24 @@ public class Agent21962504 implements Agent {
 		if(firstaction)
 			setup(s);
 		
+		Node curr_node = new Node(null,null,-1);
+		gameState curr_state = new gameState();
+		long time = System.currentTimeMillis();
+		while(System.currentTimeMillis()-time<990)
+		{
+			//select 
+			
+			
+			//expand 
+			
+			//backpropagate
+		}
+		
 		return null;
 	}
+	
+	public
+	
 	
 	private void setup(State s)
 	{
@@ -98,7 +114,36 @@ public class Agent21962504 implements Agent {
 						child_to_return = child;
 			return child_to_return;
 		}
-		
-		
+	}
+	class gameState{
+		/**The name of each of the players in the game**/
+		private String[] players;
+		/**The stack of cards that have bee discarded, or incorrectly played**/
+	    private Stack<Card> discards;
+	    /**For each colour, the cards making up that firework so far**/
+	    private Map<Colour,Stack<Card>> fireworks;
+	    /**The hand of each player**/
+	    private Card[][] hands;
+	    /**The order of this state in the game**/
+	    private int order=0;
+	    /**The number of hints remaining**/
+	    private int hints=0;
+	    /**The number of fuse tokens left**/
+	    private int fuse=0;
+	    /**The observer of this state. This allows hidden information to be redacted**/
+	    private int observer=-1;
+	    /**The previous State of the game, so that all states are accessible back to the first state (with a null previous state)**/
+	    private State previousState;
+	    /**A list of all moves made so far in the game, in the order they were played**/
+	    private Action previousAction;
+	    /**The index of the next player to move**/
+	    private int nextPlayer=-1;
+	    /**The fnal play of the game (for when the deck runs out)**/
+	    private int finalAction=-1;
+		public gameState(String [] players, Stack<Card> discards, 
+				Map<Colour,Stack<Card>> fireworks, 
+				Card[][] hands, int order, int hints, int fuse, int observer) {
+			
+		}
 	}
 }

@@ -1,4 +1,5 @@
-package MCST;
+package agents;
+
 
 import java.util.ArrayList;
 
@@ -35,16 +36,6 @@ class Node{
 	{
 		return ((double)this.score/(double)agent.MAX_SCORE)/(double)this.visits + agent.EXPLORE*Math.sqrt(
 				(double)Math.log(this.parent.visits)/(double)this.visits);
-	}
-	
-	public Node select(ArrayList<Action> BestActions)
-	{
-		Node child_to_return = null;
-		for(Node child: this.children)
-			if(BestActions.contains(child.action))
-				if(child_to_return == null || child_to_return.getUCT() < child.getUCT())
-					child_to_return = child;
-		return child_to_return;
 	}
 	
 }
