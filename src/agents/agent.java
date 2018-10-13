@@ -1,8 +1,143 @@
 package MCST;
 
-public class agent {
+import hanabAI.Action;
+import hanabAI.ActionType;
+import hanabAI.Agent;
+import hanabAI.Card;
+import hanabAI.Colour;
+import hanabAI.IllegalActionException;
+import hanabAI.State;
+
+public class agent implements Agent{
 	static final int MAX_SCORE = 25;
 	static double EXPLORE = Math.sqrt(2.0);
 	
 	
+	private int totalCards = 50;
+	
+	private Colour[][] knowColours;
+	private int[][] knowValues;
+	private int[][] theyArrived;
+	  
+	private int[][] cardsLeftInDeck;
+	  
+	  
+	private boolean firstAction = true;
+	private int numPlayers;
+	private int numCards;
+	private int index;
+
+	  
+	@Override
+	public String toString(){return "MCTS";}
+		
+	public void init(State s) {		
+	    numPlayers = s.getPlayers().length;
+	    if(numPlayers>3){
+	    	numCards = 4;
+	    	knowColours = new Colour[numPlayers][4];
+	    	knowValues = new int[numPlayers][4];
+	    	theyArrived = new int[numPlayers][4];
+	      
+	    }
+	    else{
+	    	numCards = 5;
+	    	knowColours = new Colour[numPlayers][5];
+	    	knowValues = new int[numPlayers][5];
+	    	theyArrived = new int[numPlayers][5];
+	      
+	    }
+	    
+	    cardsLeftInDeck = new int[5][5];
+	    for(int i = 0; i < 5; i ++){
+	    	for(int j = 0; j < 5; j ++){
+	    		if(j == 0){
+	    			cardsLeftInDeck[i][j] = 3;
+	    		}else if(j == 4){
+	    			cardsLeftInDeck[i][j] = 1;
+	    		}else{
+	    			cardsLeftInDeck[i][j] = 2;
+	    		}
+	    	}
+	    }
+	    
+	    for(int i = 0; i < numPlayers; i ++){
+	    	for(int j = 0; j < numCards; j ++){
+	    		theyArrived[i][j] = 1;
+	    		if(i != index){
+	    			Card c = s.getHand(i)[j];
+	    			cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue() - 1]--;
+	    		}
+	    	}
+	    }
+	    
+	    index = s.getNextPlayer();
+	    firstAction = false;
+	}
+	
+	private void updateLastActions(State s) {
+	    try{
+	        State t = (State) s.clone();
+	        for(int i = 0; i<Math.min(numPlayers-1,s.getOrder());i++){
+	          Action a = t.getPreviousAction();
+	          if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)){
+	            boolean[] hints = t.getPreviousAction().getHintedCards();
+	            for(int j = 0; j<hints.length; j++){
+	              if(hints[j]){
+	                if(a.getType()==ActionType.HINT_COLOUR) 
+	                  knowColours[a.getHintReceiver()][j] = a.getColour();
+	                else
+	                  knowValues[a.getHintReceiver()][j] = a.getValue();  
+	              }
+	            }
+	          }else{
+	        	 Card c =  t.getHand(a.getPlayer())[a.getCard()];
+	        	 cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue()-1]--;
+	        	 theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
+	        	 totalCards--;
+	          }
+	         
+	          t = t.getPreviousState();
+	        }
+	      }
+	      catch(IllegalActionException e){e.printStackTrace();}
+	}
+	
+	int mapColourToInt(Colour c){
+	    switch(c){
+	      case BLUE: return 0;
+	      case RED: return 1;
+	      case GREEN: return 2;
+	      case WHITE: return 3;
+	      case YELLOW: return 4;
+	      default: return -1;
+	    }
+	}
+	
+	private Colour mapToColour(int c) {
+	    switch(c){
+	      case 0: return Colour.BLUE;
+	      case 1: return Colour.RED;
+	      case 2: return Colour.GREEN;
+	      case 3: return Colour.WHITE;
+	      case 4: return Colour.YELLOW;
+	      default: return null;
+	    }
+	}
+
+	@Override
+	public Action doAction(State s) {
+		if(firstAction){
+			init(s);
+	    } 
+		
+		index = s.getNextPlayer();
+		updateLastActions(s);
+		
+		 try {
+			return new Action(index, toString(), ActionType.DISCARD,0);
+		} catch (IllegalActionException e) {
+			return null;
+		}
+	}
 }
