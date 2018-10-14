@@ -105,9 +105,10 @@ public class MyState implements Cloneable {
 		this.knownColours = knownColours;
 		this.knownValues = knownValues;
 		this.cardsLeftInDeck = cardsLeftInDeck;
+		this.nextPlayer = s.getNextPlayer();
 
 		this.numCards = (this.players.length > 3 ? 4 : 5);
-
+		this.deck = new Stack<Card>();
 		dealMyCards();
 	}
 	

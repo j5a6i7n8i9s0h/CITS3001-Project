@@ -1,5 +1,4 @@
 package agents;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -152,14 +151,23 @@ public class agent implements Agent{
 		
 		index = s.getNextPlayer();
 		updateLastActions(s);
-		
-		 try {
-			if(s.getHintTokens() > 7){
-				return new Action(index, toString(), ActionType.PLAY,0);	
-			}
-			return new Action(index, toString(), ActionType.DISCARD,0);
+		try {
+			return new MCTS(new MyState(s,this.cardsLeftInDeck,this.knowValues,this.knowColours)).MCTSsearch();
+		} catch (CloneNotSupportedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} catch (IllegalActionException e) {
-			return null;
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		return null;
+//		 try {
+//			if(s.getHintTokens() > 7){
+//				return new Action(index, toString(), ActionType.PLAY,0);	
+//			}
+//			return new Action(index, toString(), ActionType.DISCARD,0);
+//		} catch (IllegalActionException e) {
+//			return null;
+//		}
 	}
 }

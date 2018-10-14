@@ -22,10 +22,12 @@ class Node{
 	{
 		this.parent = parent;
 		this.player = player;
+		this.state = s;
 		this.visits = 0;
 		this.score = 0;
 		this.action = action;
 		children = new ArrayList<Node>();
+		this.expandable = new ArrayList<Action>();
 		expandableStack = new Stack();
 	}
 	// for back tracking
