@@ -11,7 +11,7 @@ public class MCTS {
 	
 	Node root;
 	
-	public MCTS(MyState s){
+	public MCTS(MyState s) throws IllegalActionException{
 		root = new Node(null, s, null);
 		
 	}
@@ -36,12 +36,12 @@ public class MCTS {
 
 
 	private Node Expand(Node lastNode) throws IllegalActionException, CloneNotSupportedException {
-		ArrayList<Action> expand= lastNode.state.getBestPossibleMoves();
-		for(Action a:expand)
-		{
-			lastNode.children.add(new Node(lastNode,lastNode.state.nextState(a, lastNode.state.getDeck()),a));
-		}
-		return lastNode.children.get(new Random().nextInt(expand.size()));
+		System.out.println("sad");
+		Action action = lastNode.expandable.pop();
+		System.out.println(action.toString());
+		Node child = new Node(lastNode,
+				lastNode.state.nextState(action, lastNode.state.getDeck()),action);
+		return child;
 	}
 
 	private Node bestChild(Node currentNode) {
@@ -59,7 +59,7 @@ public class MCTS {
 	private Node Select(Node node) throws IllegalActionException, CloneNotSupportedException {
 		Node currentNode = node;
 		while (!currentNode.state.gameOver()){
-			if(currentNode.expandable.isEmpty()){
+			if(!currentNode.expandable.isEmpty()){
 				currentNode = bestChild(currentNode);
 			}else{
 				return Expand(currentNode);

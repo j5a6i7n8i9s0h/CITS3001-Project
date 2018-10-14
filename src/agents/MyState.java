@@ -84,7 +84,7 @@ public class MyState implements Cloneable {
 	/** The fnal play of the game (for when the deck runs out) **/
 	private int finalAction = -1;
 
-	public MyState(State s, int[][] cardsLeftInDeck, int[][] knownValues, Colour[][] knownColours) {
+	public MyState(State s, int[][] cardsLeftInDeck, int[][] knownValues, Colour[][] knownColours, int[][] theyArrived) {
 		this.players = s.getPlayers();
 		this.discards = s.getDiscards();
 		// hands and fireworks ??
@@ -106,7 +106,8 @@ public class MyState implements Cloneable {
 		this.knownValues = knownValues;
 		this.cardsLeftInDeck = cardsLeftInDeck;
 		this.nextPlayer = s.getNextPlayer();
-
+		this.numPlayers = s.getPlayers().length;
+		this.theyArrived = theyArrived;
 		this.numCards = (this.players.length > 3 ? 4 : 5);
 		this.deck = new Stack<Card>();
 		dealMyCards();
@@ -941,7 +942,7 @@ public Action doAction(MyState s) {
 			return Integer.MIN_VALUE;
 		if(c!=null && value!=0) //both is known
 		{
-			if(this.fireworks.get(c).peek().getValue()>=value) 
+			if(this.fireworks.get(c).size()!=0 && this.fireworks.get(c).peek().getValue()>=value) 
 				return Integer.MAX_VALUE;
 			return (value==1?3:2)*this.cardsLeftInDeck[this.mapColourToInt(c)][value-1];
 			// Future <=  consider other peoples hands 
@@ -1014,7 +1015,7 @@ public Action doAction(MyState s) {
 				return Integer.MAX_VALUE;
 			for(Colour s:Colour.values())
 			{
-				if(this.fireworks.get(s).peek().getValue()-c.getValue()==-1)
+				if(this.fireworks.get(s).size()!=0 && this.fireworks.get(s).peek().getValue()-c.getValue()==-1)
 					return Integer.MIN_VALUE;
 			}
 			return k*this.cardsLeftInDeck[this.mapColourToInt(c.getColour())][c.getValue()-1]*(this.theyArrived[playerToHint][card]);
@@ -1037,8 +1038,9 @@ public Action doAction(MyState s) {
 		return Integer.MIN_VALUE;
 	}
 	
-	public ArrayList<Action> getBestPossibleMoves() throws IllegalActionException {
-		ArrayList<Action> bestmoves = new ArrayList<Action>();
+	public Stack<Action> getBestPossibleMoves() throws IllegalActionException {
+		Stack<Action> bestmoves = new Stack<Action>();
+		int threshold = order;
 		for(int i = 0; i<this.numCards*2*this.numPlayers;i++)
 		{
 			//0-4 (this.numcards-1) , play card i 
@@ -1047,17 +1049,17 @@ public Action doAction(MyState s) {
 			int score;
 			if(i>=0 && i<this.numCards) {
 				score=playcard(i);
-				if(score>this.order*1.5)
+				if(score>threshold)
 				{
-					bestmoves.add(new Action(this.nextPlayer,
+					bestmoves.push(new Action(this.nextPlayer,
 							this.players[this.nextPlayer],
 							ActionType.PLAY,i%5));
 				}
 			}else if(i>=this.numCards && i<this.numCards*2) {
 				score=discardcard(i);
-				if(score>this.order*1.5)
+				if(score>threshold)
 				{
-					bestmoves.add(new Action(this.nextPlayer,
+					bestmoves.push(new Action(this.nextPlayer,
 							this.players[this.nextPlayer],
 							ActionType.DISCARD,i%5));
 				}
@@ -1067,7 +1069,7 @@ public Action doAction(MyState s) {
 				int playerToHint = (this.nextPlayer + ((int)i/this.numCards*2))%this.numPlayers;
 				int card = i%this.numCards;
 				Card c = this.hands[playerToHint][card];
-				if(score>this.order*1.5)
+				if(score>threshold)
 				{
 					if(j%2==0)
 					{
@@ -1077,7 +1079,7 @@ public Action doAction(MyState s) {
 							cards[k]=this.hands[playerToHint][k].getValue()==c.getValue();
 								
 						}
-						bestmoves.add(new Action(this.nextPlayer,
+						bestmoves.push(new Action(this.nextPlayer,
 								this.players[this.nextPlayer],
 								ActionType.HINT_VALUE,playerToHint,cards,c.getValue()));
 					}
@@ -1089,7 +1091,7 @@ public Action doAction(MyState s) {
 							cards[k]=this.hands[playerToHint][k].getColour()==c.getColour();
 								
 						}
-						bestmoves.add(new Action(this.nextPlayer,
+						bestmoves.push(new Action(this.nextPlayer,
 								this.players[this.nextPlayer],
 								ActionType.HINT_COLOUR,playerToHint,cards,c.getColour()));
 					}

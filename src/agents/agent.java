@@ -152,7 +152,7 @@ public class agent implements Agent{
 		index = s.getNextPlayer();
 		updateLastActions(s);
 		try {
-			return new MCTS(new MyState(s,this.cardsLeftInDeck,this.knowValues,this.knowColours)).MCTSsearch();
+			return new MCTS(new MyState(s,this.cardsLeftInDeck,this.knowValues,this.knowColours, this.theyArrived)).MCTSsearch();
 		} catch (CloneNotSupportedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
