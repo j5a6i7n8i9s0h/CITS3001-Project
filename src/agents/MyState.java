@@ -972,6 +972,12 @@ public Action doAction(MyState s) {
 		}
 	}
 	
+	
+	public Stack<Card> getDeck()
+	{
+		return this.deck;
+	}
+	
 	public int playcard(int i) {
 		i=i%this.numCards;
 		Colour c = this.knownColours[this.nextPlayer][i];
@@ -1037,7 +1043,6 @@ public Action doAction(MyState s) {
 			//0-4 (this.numcards-1) , play card i 
 			// 5-9 (this.numcards - this.numcards-1), discard card i 
 			//
-			Action temp;
 			int score;
 			if(i>=0 && i<this.numCards) {
 				score=playcard(i);
@@ -1060,7 +1065,7 @@ public Action doAction(MyState s) {
 				score= (j%2==0?hintCardByValue(i):hintCardByColour(i));
 				int playerToHint = (this.nextPlayer + ((int)i/this.numCards*2))%this.numPlayers;
 				int card = i%this.numCards;
-				Card c = this.hands[playerToHint][card];				if(score>this.order*1.5)
+				Card c = this.hands[playerToHint][card];
 				if(score>this.order*1.5)
 				{
 					if(j%2==0)

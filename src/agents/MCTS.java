@@ -35,10 +35,12 @@ public class MCTS {
 	}
 
 
-	private Node Expand(Node lastNode) {
-		ArrayList<Action> unexp = lastNode.getUnexp();
-		return lastNode;
-		
+	private Node Expand(Node lastNode) throws IllegalActionException, CloneNotSupportedException {
+		ArrayList<Action> expand= lastNode.state.getBestPossibleMoves();
+		Action action = expand.get(new Random().nextInt(expand.size()));
+		Node child = new Node(lastNode,lastNode.state.nextState(action, lastNode.state.getDeck()),action);
+		lastNode.children.add(child);
+		return child;
 	}
 
 	private Node bestChild(Node currentNode) {
@@ -53,7 +55,7 @@ public class MCTS {
 		return bestSelection;
 	}
 	
-	private Node Select(Node node) {
+	private Node Select(Node node) throws IllegalActionException, CloneNotSupportedException {
 		Node currentNode = node;
 		while (!currentNode.state.gameOver()){
 			if(currentNode.expandable.isEmpty()){

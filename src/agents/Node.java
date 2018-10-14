@@ -1,7 +1,7 @@
 package agents;
 
 
-import java.util.ArrayList;
+import java.util.*;
 
 import hanabAI.Action;
 import hanabAI.State;
@@ -10,6 +10,7 @@ class Node{
 	Node parent; 
 	ArrayList<Node> children; 
 	ArrayList<Action> expandable;
+	Stack<Node> expandableStack;
 	MyState state; 
 	Action action;
 
@@ -25,6 +26,7 @@ class Node{
 		this.score = 0;
 		this.action = action;
 		children = new ArrayList<Node>();
+		expandableStack = new Stack();
 	}
 	// for back tracking
 	public void update(State s)
