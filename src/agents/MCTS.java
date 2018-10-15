@@ -62,7 +62,9 @@ public class MCTS {
 		Node currentNode = node;
 		while (!currentNode.state.gameOver()){
 			if(currentNode.expandable.isEmpty()){
-				currentNode = bestChild(currentNode);
+				Node bestChild = bestChild(currentNode);
+				if(bestChild==null) break;
+				currentNode = bestChild;
 			}else{
 				return Expand(currentNode);
 			}
