@@ -30,17 +30,19 @@ public class MCTS {
 		while(currentNode.parent!=null)
 		{
 			currentNode.score+=rollout;
+			currentNode.visits++;
 			currentNode = currentNode.parent;
 		}
+		currentNode.visits++;
 	}
 
 
 	private Node Expand(Node lastNode) throws IllegalActionException, CloneNotSupportedException {
-		System.out.println("sad");
 		Action action = lastNode.expandable.pop();
-		System.out.println(action.toString());
+		MyState newState = (MyState) lastNode.state.clone();
 		Node child = new Node(lastNode,
-				lastNode.state.nextState(action, lastNode.state.getDeck()),action);
+				newState.nextState(action, newState.getDeck()),action);
+		lastNode.children.add(child);
 		return child;
 	}
 
@@ -59,7 +61,7 @@ public class MCTS {
 	private Node Select(Node node) throws IllegalActionException, CloneNotSupportedException {
 		Node currentNode = node;
 		while (!currentNode.state.gameOver()){
-			if(!currentNode.expandable.isEmpty()){
+			if(currentNode.expandable.isEmpty()){
 				currentNode = bestChild(currentNode);
 			}else{
 				return Expand(currentNode);

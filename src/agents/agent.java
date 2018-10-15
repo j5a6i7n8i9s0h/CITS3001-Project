@@ -61,6 +61,8 @@ public class agent implements Agent{
 	    		if(i != index){
 	    			Card c = s.getHand(i)[j];
 	    			cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue() - 1]--;
+	    			knowValues[i][j] = c.getValue();
+	    			knowColours[i][j] = c.getColour();
 	    		}
 	    	}
 	    }
@@ -85,6 +87,8 @@ public class agent implements Agent{
 	              }
 	            }
 	          }else{
+		         knowColours[a.getPlayer()][a.getCard()] = null;
+		         knowValues[a.getPlayer()][a.getCard()] = 0;
 	        	 Card replaced =  t.getHand(a.getPlayer())[a.getCard()];
 	        	 if(replaced != null){
 	        	 cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1]--;
@@ -151,8 +155,9 @@ public class agent implements Agent{
 		
 		index = s.getNextPlayer();
 		updateLastActions(s);
+		State current_state = (State) s.clone();
 		try {
-			return new MCTS(new MyState(s,this.cardsLeftInDeck,this.knowValues,this.knowColours, this.theyArrived)).MCTSsearch();
+			return new MCTS(new MyState(current_state,this.cardsLeftInDeck,this.knowValues,this.knowColours, this.theyArrived)).MCTSsearch();
 		} catch (CloneNotSupportedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

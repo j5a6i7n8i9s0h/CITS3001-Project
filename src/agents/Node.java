@@ -38,7 +38,7 @@ class Node{
 	//Exploit vs explore 
 	public double getUCT()
 	{
-		return ((double)this.score/(double)agent.MAX_SCORE)/(double)this.visits + agent.EXPLORE*Math.sqrt(
+		return (double)this.score/(double)this.visits + agent.EXPLORE*Math.sqrt(
 				(double)Math.log(this.parent.visits)/(double)this.visits);
 	}
 	
