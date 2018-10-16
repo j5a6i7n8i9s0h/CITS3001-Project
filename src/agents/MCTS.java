@@ -17,7 +17,7 @@ public class MCTS {
 	}
 	
 	public Action MCTSsearch() throws CloneNotSupportedException, IllegalActionException{
-		long timeLimit = System.currentTimeMillis() + 500;
+		long timeLimit = System.currentTimeMillis() + 50;
 		Node currentNode;
 		while(System.currentTimeMillis() < timeLimit){
 			currentNode = Select(root);
