@@ -36,5 +36,4 @@ class Node{
 				(double)Math.log(this.parent.visits)/(double)this.visits);
 	}
 	
-	
 }
