@@ -17,14 +17,18 @@ public class MCTS {
 	}
 	
 	public Action MCTSsearch() throws CloneNotSupportedException, IllegalActionException{
+
 		long timeLimit = System.currentTimeMillis() + 590;
 		Node currentNode = root;
+
 		while(System.currentTimeMillis() < timeLimit){
 			currentNode = Select(root);
 			BackPropogation(currentNode, currentNode.state.Rollout());
 		}
+
 		System.out.println("done");
 		return bestChild(root).action;
+
 	}
 
 	private void BackPropogation(Node currentNode, int rollout) {
