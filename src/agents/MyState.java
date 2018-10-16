@@ -314,7 +314,7 @@ public Action doAction(MyState s) {
 			for(int i = 0; i < 10; i ++){
 				int value = evaluateHint(s, hintPlayer, i);
 				if(value - (8-hints) > maxValue){
-					maxValue = 8-hints; // prioritise next player
+					maxValue = value - (8-hints); // prioritise next player
 					bestHint = i;
 					hintPlayer = (index+2)%numPlayers;
 				}
