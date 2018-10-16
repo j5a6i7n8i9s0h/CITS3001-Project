@@ -180,7 +180,7 @@ public class agent implements Agent{
 			}
 			int[][] cloneArrived = new int[numPlayers][numCards];
 			for(int i = 0; i < numPlayers; i ++){
-				cloneArrived[i] = cloneArrived[i].clone();
+				cloneArrived[i] = theyArrived[i].clone();
 			}
 			
 			

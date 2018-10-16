@@ -93,7 +93,9 @@ public class MyState implements Cloneable {
  	      }
  	    }
  	   for(int i = 0; i < numCards; i ++){
- 	      if(knownValues[nextPlayer][i]> 0 ){
+ 	      
+ 		   if(hands[nextPlayer][i] != null){continue;}
+ 		   if(knownValues[nextPlayer][i]> 0 ){
  	      	int total = 0;
  	        for(Colour c: Colour.values()){
  	          total += cardsLeftInDeck[mapColourToInt(c)][knownValues[nextPlayer][i]-1];
@@ -111,6 +113,7 @@ public class MyState implements Cloneable {
  	      }
  	   }
  	   for(int i = 0; i < numCards; i ++){
+ 		  if(hands[nextPlayer][i] != null){continue;}
  	       if(knownColours[nextPlayer][i] != null){
  	    	   int total = 0;
  	    	   for(int j = 0; j < 5; j ++){
@@ -219,7 +222,7 @@ public class MyState implements Cloneable {
 			Card newC = s.hands[action.getPlayer()][action.getCard()];
 			if(newC != null){
 				s.cardsLeftInDeck[mapColourToInt(newC.getColour())][newC.getValue()-1]--;
-				s.theyArrived[action.getPlayer()][action.getPlayer()] = s.order;
+				s.theyArrived[action.getPlayer()][action.getCard()] = s.order;
 				s.totalCards--;
 			}
 			break;
@@ -237,7 +240,7 @@ public class MyState implements Cloneable {
 			Card newD = s.hands[action.getPlayer()][action.getCard()];
 			if(newD != null){
 				s.cardsLeftInDeck[mapColourToInt(newD.getColour())][newD.getValue()-1]--;
-				s.theyArrived[action.getPlayer()][action.getPlayer()] = s.order;
+				s.theyArrived[action.getPlayer()][action.getCard()] = s.order;
 				s.totalCards--;
 			}
 			break;
@@ -311,7 +314,7 @@ public Action doAction(MyState s) {
 			for(int i = 0; i < 10; i ++){
 				int value = evaluateHint(s, hintPlayer, i);
 				if(value - (8-hints) > maxValue){
-					maxValue = 8-hints; // prioritise next player
+					maxValue = value - (8-hints); // prioritise next player
 					bestHint = i;
 					hintPlayer = (index+2)%numPlayers;
 				}

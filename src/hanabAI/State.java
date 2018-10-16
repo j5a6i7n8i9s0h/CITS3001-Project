@@ -111,6 +111,7 @@ public class State implements Cloneable{
    s.previousAction = action;
    s.nextPlayer = (nextPlayer+1)%players.length; 
    s.previousState = this;  
+   
    return s;
   }
 
