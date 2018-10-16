@@ -10,10 +10,10 @@ import hanabAI.State;
 class Node{
 	Node parent; 
 	ArrayList<Node> children; 
-	Stack<Action> expandable;
+	//Stack<Action> expandable;
+	PriorityQueue<Move> expandable;
 	MyState state; 
 	Action action;
-//	int player; // which player is this node 
 	int visits; 
 	int score; 
 	
