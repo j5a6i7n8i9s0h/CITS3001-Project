@@ -229,8 +229,7 @@ public class MyState implements Cloneable {
 			if (!deck.isEmpty())
 				s.hands[action.getPlayer()][action.getCard()] = s.deck.pop();
 			else if (deck.isEmpty()) {
-				if (finalAction == -1)
-					s.finalAction = order + players.length;
+				if (finalAction == -1) s.finalAction = order + players.length;
 				s.hands[action.getPlayer()][action.getCard()] = null;
 			}
 			if (hints < 8)
@@ -297,21 +296,24 @@ public Action doAction(MyState s) {
 
 		int maxValue = 0;
 		int bestHint = -1;
+		int hintPlayer = (index+1)%numPlayers;
 
 		
 		for(int i = 0; i < 10; i ++){
-			int value = evaluateHint(s, (index+1)%numPlayers, i);
+			int value = evaluateHint(s, hintPlayer , i);
 			if(value > maxValue){
 				maxValue = value;
 				bestHint = i;
 			}
 		}
+
 		if(numPlayers > 2){
 			for(int i = 0; i < 10; i ++){
-				int value = evaluateHint(s, (index+2)%numPlayers, i);
+				int value = evaluateHint(s, hintPlayer, i);
 				if(value - (8-hints) > maxValue){
 					maxValue = 8-hints; // prioritise next player
 					bestHint = i;
+					hintPlayer = (index+2)%numPlayers;
 				}
 			}
 		}
@@ -320,9 +322,9 @@ public Action doAction(MyState s) {
 		try {
 			Action a = playKnown(s);
 
-			if (maxValue >= 15) {
+			if (maxValue >= 15 || hints > 5){
 				if (a == null)
-					a = hint(s, (index + 1) % numPlayers, bestHint);
+					a = hint(s, hintPlayer, bestHint);
 				if (a == null)
 					a = discardKnown(s);
 
@@ -331,14 +333,14 @@ public Action doAction(MyState s) {
 					a = discardKnown(s);
 				if (maxValue > 5 || hints > 4) {
 					if (a == null)
-						a = hint(s, (index + 1) % numPlayers, bestHint);
+						a = hint(s, hintPlayer, bestHint);
 				}
 			}
 
 			if (a == null)
 				a = discardOldest(s);
 			if (a == null)
-				a = hint(s, (index + 1) % numPlayers, bestHint);
+				a = hint(s, hintPlayer, bestHint);
 			if (a == null)
 				a = guess(s);
 			return a;
@@ -633,7 +635,7 @@ public Action doAction(MyState s) {
 				if(knownColours[p][i] == null && c.getColour() == mapToColour(hint)){
 					score+= 1;
 					if(playable(s, c.getColour(), c.getValue())){
-						score += 6; //could add some convention priority later
+						score += 7; //could add some convention priority later
 					}
 					if(finals[i]){
 						//score+=5;
@@ -781,7 +783,7 @@ public Action doAction(MyState s) {
 	private boolean[] finalCards(MyState s, int p) {//fix
 
 		if (p == index) {
-			return null;
+			//return null;
 		}
 
 		boolean[] finals = new boolean[numCards];
@@ -1074,7 +1076,7 @@ public Action doAction(MyState s) {
 				score=playcard(i);
 				Action a = new Action(nextPlayer,
 						players[nextPlayer],
-						ActionType.PLAY,i%5);
+						ActionType.PLAY,i%numCards);
 				if(score>threshold)
 				{
 					//topplays.add(a);
@@ -1086,7 +1088,7 @@ public Action doAction(MyState s) {
 				score=discardcard(i);
 				Action a=new Action(nextPlayer,
 						players[nextPlayer],
-						ActionType.DISCARD,i%5);
+						ActionType.DISCARD,i%numCards);
 				if(score>threshold)
 				{
 					bestmoves.push(a);
@@ -1159,6 +1161,7 @@ public Action doAction(MyState s) {
 		    	  s.cardsLeftInDeck[i] = s.cardsLeftInDeck[i].clone();
 		      }
 		      s.deck = (Stack<Card>) this.deck.clone();
+		      
 		      s.knownColours = new Colour[numPlayers][numCards];
 		      s.theyArrived = new int[numPlayers][numCards];
 		      s.knownValues = new int[numPlayers][numCards];

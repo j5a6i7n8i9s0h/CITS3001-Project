@@ -92,20 +92,23 @@ public class RuansGreedyAgent implements Agent{
 	    
 		int maxValue = 0;
 		int bestHint = -1;
+		int hintPlayer = (index+1)%numPlayers;
 		
 		for(int i = 0; i < 10; i ++){
-			int value = evaluateHint(s, (index+1)%numPlayers, i);
+			int value = evaluateHint(s, hintPlayer, i);
 			if(value > maxValue){
 				maxValue = value;
 				bestHint = i;
 			}
 		}
+
 		if(numPlayers > 2){
 			for(int i = 0; i < 10; i ++){
-				int value = evaluateHint(s, (index+2)%numPlayers, i);
+				int value = evaluateHint(s, hintPlayer, i);
 				if(value - (8-s.getHintTokens()) > maxValue){
 					maxValue = 8-s.getHintTokens(); // prioritise next player
 					bestHint = i;
+					hintPlayer = (index+2)%numPlayers;
 				}
 			}
 		}
@@ -113,19 +116,19 @@ public class RuansGreedyAgent implements Agent{
 	    try{
 	      Action a = playKnown(s);
 	      
-	      if(maxValue >= 15){
-	    	  if(a==null) a = hint(s, (index+1)%numPlayers, bestHint);
+	      if(maxValue >= 15 || s.getHintTokens() > 5){
+	    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 	    	  if(a==null) a = discardKnown(s);
 	    	  
 	      }else{
 		      if(a==null) a = discardKnown(s);
 		      if(maxValue > 5){
-		    	  if(a==null) a = hint(s, (index+1)%numPlayers, bestHint);
+		    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 		      }
 	      }
 	      
 	      if(a==null) a = discardOldest(s);
-	      if(a==null) a = hint(s, (index+1)%numPlayers, bestHint);
+	      if(a==null) a = hint(s, hintPlayer, bestHint);
 	      if(a==null) a = guess(s);
 	      return a;
 	    }
@@ -415,11 +418,11 @@ public class RuansGreedyAgent implements Agent{
 				if(knowValues[p][i] == 0 && c.getValue() == (hint-4)){
 					score+= 1;
 					if(playable(s, c.getColour(), c.getValue())){
-						score += 7;
+						score += 8;
 					}
 
 					if(finals[i]){
-						score+=4;
+						//score+=4;
 					}
 				}
 			}else{
@@ -429,7 +432,7 @@ public class RuansGreedyAgent implements Agent{
 						score += 8; //could add some convention priority later
 					}
 					if(finals[i]){
-						score+=5;
+						//score+=5;
 					}
 				}
 			}
