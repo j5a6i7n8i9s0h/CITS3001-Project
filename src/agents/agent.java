@@ -13,7 +13,8 @@ import hanabAI.State;
 
 public class agent implements Agent{
 	static final int MAX_SCORE = 25;
-	static double EXPLORE = Math.E;
+	static double EXPLORE = Math.sqrt(2);
+	static int BRANCH_FACTOR = 9;
 	
 	
 	private int totalCards = 50;

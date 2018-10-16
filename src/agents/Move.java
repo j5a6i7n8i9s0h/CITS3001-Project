@@ -1,7 +1,9 @@
 package agents;
+import java.util.Comparator;
+
 import hanabAI.*;
 
-public class Move implements Comparable<Move> {
+public class Move{
 	private Action action; 
 	private int score; 
 	
@@ -11,11 +13,8 @@ public class Move implements Comparable<Move> {
 		this.score = score;
 	}
 
-	@Override
-	public int compareTo(Move o) {
-		return o.score-this.score;
-	}
 	
 	public Action getAction(){return this.action;}
-
+	public int getScore(){return this.score;}
+	
 }
