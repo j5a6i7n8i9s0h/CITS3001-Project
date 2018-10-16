@@ -158,48 +158,48 @@ public class agent implements Agent{
 
 	@Override
 	public Action doAction(State s) {
-        if(firstAction){
-            init(s);
-        } 
-
-        index = s.getNextPlayer();
-        updateLastActions(s);
-        State current_state = (State) s.clone();
-        try {
-            int[][] cloneCardsLeftInDeck = new int[5][5];
-            for(int i = 0; i < 5; i ++){
-                cloneCardsLeftInDeck[i] = cardsLeftInDeck[i].clone();
-            }
-            int[][] cloneKnowValues = new int[numPlayers][numCards];
-            for(int i = 0; i < numPlayers; i ++){
-                cloneKnowValues[i] = knowValues[i].clone();
-            }
-            Colour[][] cloneknowColours = new Colour[numPlayers][numCards];
-            for(int i = 0; i < numPlayers; i ++){
-                cloneknowColours[i] = knowColours[i].clone();
-            }
-            int[][] cloneArrived = new int[numPlayers][numCards];
-            for(int i = 0; i < numPlayers; i ++){
-                cloneArrived[i] = cloneArrived[i].clone();
-            }
-
-
-            return new MCTS(new MyState(current_state, cloneCardsLeftInDeck,cloneKnowValues , cloneknowColours, cloneArrived)).MCTSsearch();
-        } catch (CloneNotSupportedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IllegalActionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
-//         try {
-//            if(s.getHintTokens() > 7){
-//                return new Action(index, toString(), ActionType.PLAY,0);
-//            }
-//            return new Action(index, toString(), ActionType.DISCARD,0);
-//        } catch (IllegalActionException e) {
-//            return null;
-//        }
-    }
+		if(firstAction){
+			init(s);
+	    } 
+		
+		index = s.getNextPlayer();
+		updateLastActions(s);
+		State current_state = (State) s.clone();
+		try {
+			int[][] cloneCardsLeftInDeck = new int[5][5];
+			for(int i = 0; i < 5; i ++){
+				cloneCardsLeftInDeck[i] = cardsLeftInDeck[i].clone();
+			}
+			int[][] cloneKnowValues = new int[numPlayers][numCards];
+			for(int i = 0; i < numPlayers; i ++){
+				cloneKnowValues[i] = knowValues[i].clone();
+			}
+			Colour[][] cloneknowColours = new Colour[numPlayers][numCards];
+			for(int i = 0; i < numPlayers; i ++){
+				cloneknowColours[i] = knowColours[i].clone();
+			}
+			int[][] cloneArrived = new int[numPlayers][numCards];
+			for(int i = 0; i < numPlayers; i ++){
+				cloneArrived[i] = cloneArrived[i].clone();
+			}
+			
+			
+			return new MCTS(new MyState(current_state, cloneCardsLeftInDeck,cloneKnowValues , cloneknowColours, cloneArrived)).MCTSsearch();
+		} catch (CloneNotSupportedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalActionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+//		 try {
+//			if(s.getHintTokens() > 7){
+//				return new Action(index, toString(), ActionType.PLAY,0);	
+//			}
+//			return new Action(index, toString(), ActionType.DISCARD,0);
+//		} catch (IllegalActionException e) {
+//			return null;
+//		}
+	}
 }

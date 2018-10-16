@@ -28,6 +28,7 @@ class Node{
 		children = new ArrayList<Node>();
 		this.expandable = this.state.getBestPossibleMoves();
 	}
+
 	//Exploit vs explore 
 	public double getUCT()
 	{

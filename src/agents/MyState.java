@@ -329,7 +329,7 @@ public Action doAction(MyState s) {
 			} else {
 				if (a == null)
 					a = discardKnown(s);
-				if (maxValue > 5) {
+				if (maxValue > 5 || hints > 4) {
 					if (a == null)
 						a = hint(s, (index + 1) % numPlayers, bestHint);
 				}
@@ -626,17 +626,17 @@ public Action doAction(MyState s) {
 					}
 
 					if(finals[i]){
-						score+=4;
+						//score+=4;
 					}
 				}
 			}else{
 				if(knownColours[p][i] == null && c.getColour() == mapToColour(hint)){
 					score+= 1;
 					if(playable(s, c.getColour(), c.getValue())){
-						score += 8; //could add some convention priority later
+						score += 6; //could add some convention priority later
 					}
 					if(finals[i]){
-						score+=5;
+						//score+=5;
 					}
 				}
 			}

@@ -212,7 +212,7 @@ public class RuansGreedyAgent implements Agent{
 
 	private Action hint(State s, int p, int hint) throws IllegalActionException{
 		
-		if(s.getHintTokens() == 0){
+		if(s.getHintTokens() == 0 || hint == -1){
 			return null;
 		}
 		
