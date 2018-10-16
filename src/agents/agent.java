@@ -61,8 +61,6 @@ public class agent implements Agent{
 	    		if(i != index){
 	    			Card c = s.getHand(i)[j];
 	    			cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue() - 1]--;
-	    			knowValues[i][j] = c.getValue();
-	    			knowColours[i][j] = c.getColour();
 	    		}
 	    	}
 	    }
@@ -91,9 +89,9 @@ public class agent implements Agent{
 		         knowValues[a.getPlayer()][a.getCard()] = 0;
 	        	 Card replaced =  t.getHand(a.getPlayer())[a.getCard()];
 	        	 if(replaced != null){
-	        	 cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1]--;
-	        	 theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
-	        	 //totalCards--;
+	        		 cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1]--;
+	        		 theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
+	        		 totalCards--;
 	        	 }
 
 	          }
@@ -105,8 +103,19 @@ public class agent implements Agent{
 			
 			
 	        if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)){
-	        	//already up to date
+	            boolean[] hints = t.getPreviousAction().getHintedCards();
+	            for(int j = 0; j<hints.length; j++){
+	              if(hints[j]){
+	                if(a.getType()==ActionType.HINT_COLOUR) 
+	                  knowColours[a.getHintReceiver()][j] = a.getColour();
+	                else
+	                  knowValues[a.getHintReceiver()][j] = a.getValue();  
+	              }
+	            }
 	        }else{
+		        knowColours[a.getPlayer()][a.getCard()] = null;
+		        knowValues[a.getPlayer()][a.getCard()] = 0;
+	        	
 	        	Stack<Card> temp = t.getDiscards();
 	        	
 	        	if(t.getPreviousState().getDiscards().size() < temp.size()){
@@ -157,7 +166,25 @@ public class agent implements Agent{
 		updateLastActions(s);
 		State current_state = (State) s.clone();
 		try {
-			return new MCTS(new MyState(current_state,this.cardsLeftInDeck,this.knowValues,this.knowColours, this.theyArrived)).MCTSsearch();
+			int[][] cloneCardsLeftInDeck = new int[5][5];
+			for(int i = 0; i < 5; i ++){
+				cloneCardsLeftInDeck[i] = cardsLeftInDeck[i].clone();
+			}
+			int[][] cloneKnowValues = new int[numPlayers][numCards];
+			for(int i = 0; i < numPlayers; i ++){
+				cloneKnowValues[i] = knowValues[i].clone();
+			}
+			Colour[][] cloneknowColours = new Colour[numPlayers][numCards];
+			for(int i = 0; i < numPlayers; i ++){
+				cloneknowColours[i] = knowColours[i].clone();
+			}
+			int[][] cloneArrived = new int[numPlayers][numCards];
+			for(int i = 0; i < numPlayers; i ++){
+				cloneArrived[i] = cloneArrived[i].clone();
+			}
+			
+			
+			return new MCTS(new MyState(current_state, cloneCardsLeftInDeck,cloneKnowValues , cloneknowColours, cloneArrived)).MCTSsearch();
 		} catch (CloneNotSupportedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

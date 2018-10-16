@@ -28,13 +28,7 @@ class Node{
 		children = new ArrayList<Node>();
 		this.expandable = this.state.getBestPossibleMoves();
 	}
-	// for back tracking
-	public void update(State s)
-	{
-		this.visits++;
-		//if not root node/player ? 
-		this.score += s.getScore(); 
-	}
+
 	//Exploit vs explore 
 	public double getUCT()
 	{
@@ -42,14 +36,5 @@ class Node{
 				(double)Math.log(this.parent.visits)/(double)this.visits);
 	}
 	
-	public ArrayList<Action> getUnexp(){
-		ArrayList<Action> unexp = new ArrayList<Action>(expandable);
-		for(Node n:children)
-		{
-			if(expandable.contains(n.action))
-				unexp.remove(n.action);
-		}
-		return unexp;
-	}
 	
 }
