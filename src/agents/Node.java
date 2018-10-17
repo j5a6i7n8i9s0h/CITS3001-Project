@@ -10,7 +10,6 @@ import hanabAI.State;
 class Node{
 	Node parent; 
 	ArrayList<Node> children; 
-	//Stack<Action> expandable;
 	PriorityQueue<Move> expandable;
 	MyState state; 
 	Action action;

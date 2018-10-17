@@ -89,7 +89,7 @@ public class Hanabi{
 	int min = 25;
 	  
 	//Agent[] agents = {new agents.agent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent() , new agents.agent(), new agents.agent()};
-    Agent[] agents = {new agents.agent(), new agents.agent(), new agents.RuansGreedyAgent()};
+    Agent[] agents = {new agents.agent(), new agents.BasicAgent()};
 /*	for(int i = 0; i < total; i++){
 		Agent[] agents = {new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(),new agents.RuansGreedyAgent()};
 		Hanabi game= new Hanabi(agents);
