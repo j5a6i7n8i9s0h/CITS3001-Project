@@ -82,13 +82,43 @@ public class Hanabi{
    * The agent implementations should be in the default package.
    * */
   public static void main(String[] args){
-    Agent[] agents = {new agents.agent(), new agents.BasicAgent(), new agents.BasicAgent() , new agents.agent(), new agents.agent()};
-    Hanabi game= new Hanabi(agents);
-    StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
-    int result = game.play(log);
-    log.append("The final score is "+result+".\n");
-    log.append(critique(result));
-    System.out.print(log);
+    
+	double total = 1000;
+	double score = 0;
+	int max = 0;
+	int min = 25;
+	  
+	//Agent[] agents = {new agents.agent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent() , new agents.agent(), new agents.agent()};
+    Agent[] agents = {new agents.agent(), new agents.agent(), new agents.RuansGreedyAgent()};
+/*	for(int i = 0; i < total; i++){
+		Agent[] agents = {new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(),new agents.RuansGreedyAgent()};
+		Hanabi game= new Hanabi(agents);
+		StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
+		int result = game.play(log);
+		score += result;
+		if(result > max){
+			max = result;
+		}
+		if(result < min){
+			min = result;
+		}
+		//log.append("The final score is "+result+".\n");
+		//log.append(critique(result));
+		//System.out.print(log);
+	}*/
+	
+/*	System.out.println("Average score is " + score/total);
+	System.out.println("max score is " + max);
+	System.out.println("min score is " + min);*/
+  
+	//Agent[] agents = {new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(),new agents.RuansGreedyAgent()};
+	Hanabi game= new Hanabi(agents);
+	StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
+	int result = game.play(log);
+	log.append("The final score is "+result+".\n");
+	log.append(critique(result));
+	System.out.print(log);
+  
   }
 }
 

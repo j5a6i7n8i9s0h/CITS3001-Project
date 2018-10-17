@@ -424,7 +424,7 @@ public Action doAction(MyState s) {
 
 	private Action hint(MyState s, int p, int hint) throws IllegalActionException {
 
-		if (s.hints == 0) {
+		if (s.hints == 0 || hint == -1) {
 			return null;
 		}
 		
