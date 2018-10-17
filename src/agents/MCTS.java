@@ -17,7 +17,7 @@ public class MCTS {
 	}
 	
 	public Action MCTSsearch() throws CloneNotSupportedException, IllegalActionException{
-		long timeLimit = System.currentTimeMillis() + 200;
+		long timeLimit = System.currentTimeMillis() + 880;
 		Node currentNode = root;
 		while(System.currentTimeMillis() < timeLimit){
 			currentNode = Select(root);
@@ -25,7 +25,8 @@ public class MCTS {
 		}
 
 		System.out.println("done");
-		return bestChild(root).action;
+		Action a= bestChild(root).action;
+		return a;
 
 	}
 
@@ -36,12 +37,12 @@ public class MCTS {
 			currentNode.visits++;
 			currentNode = currentNode.parent;
 		}
-		currentNode.visits++;
+		currentNode.visits++; 
 	}
 
 
 	private Node Expand(Node lastNode) throws IllegalActionException, CloneNotSupportedException {
-		Action action = lastNode.expandable.pop();
+		Action action = lastNode.expandable.poll().getAction();
 		MyState newState = (MyState) lastNode.state.clone();
 		Node child = new Node(lastNode, newState.nextState(action, newState.getDeck()),action);
 		lastNode.children.add(child);
@@ -63,7 +64,7 @@ public class MCTS {
 	private Node Select(Node node) throws IllegalActionException, CloneNotSupportedException {
 		Node currentNode = node;
 		while (!currentNode.state.gameOver()){
-			if(currentNode.expandable.isEmpty()){
+			if(currentNode.expandable.isEmpty()||currentNode.children.size()==agent.BRANCH_FACTOR){
 				Node bestChild = bestChild(currentNode);
 				if(bestChild==null) break;
 				currentNode = bestChild;

@@ -4,7 +4,6 @@ import java.util.*;
 import hanabAI.*;
 
 public class MyState implements Cloneable {
-
 	private int totalCards = 50;
 
 	private Colour[][] knownColours;
@@ -82,7 +81,7 @@ public class MyState implements Cloneable {
 		dealMyCards();
 	}
 	
- 	private void dealMyCards(){
+	private void dealMyCards(){
  	    for(int i = 0; i < numCards; i ++){
  	      if(knownValues[nextPlayer][i]> 0 && knownColours[nextPlayer][i] != null){
  	        cardsLeftInDeck[mapColourToInt(knownColours[nextPlayer][i])][knownValues[nextPlayer][i]-1]--;
@@ -214,7 +213,7 @@ public class MyState implements Cloneable {
 			}
 			if (!deck.isEmpty())
 				s.hands[action.getPlayer()][action.getCard()] = s.deck.pop();
-			else if (deck.isEmpty()) {
+			else {
 				if (finalAction == -1)
 					s.finalAction = order + players.length;
 				s.hands[action.getPlayer()][action.getCard()] = null;
@@ -231,8 +230,9 @@ public class MyState implements Cloneable {
 			s.discards.push(c);
 			if (!deck.isEmpty())
 				s.hands[action.getPlayer()][action.getCard()] = s.deck.pop();
-			else if (deck.isEmpty()) {
-				if (finalAction == -1) s.finalAction = order + players.length;
+			else{
+				if (finalAction == -1)
+					s.finalAction = order + players.length;
 				s.hands[action.getPlayer()][action.getCard()] = null;
 			}
 			if (hints < 8)
@@ -789,9 +789,9 @@ public Action doAction(MyState s) {
 
 	private boolean[] finalCards(MyState s, int p) {//fix
 
-		if (p == index) {
-			//return null;
-		}
+//		if (p == index) {
+//			return null;
+//		}
 
 		boolean[] finals = new boolean[numCards];
 		for (int i = 0; i < numCards; i++) {
@@ -983,12 +983,6 @@ public Action doAction(MyState s) {
 		}
 		else if(value!=0) //only value is known
 		{
-//			boolean[] chance = new boolean[5];
-//			for(Colour col:Colour.values())
-//			{
-//				this.cardsLeftInDeck[this.mapColourToInt(col)][value-1];
-//				this.fireworks.get(col).peek().getValue()
-//			}
 			return (this.order-order)*(value==1?3:2);
 		}
 		else // neither is known
@@ -1007,6 +1001,8 @@ public Action doAction(MyState s) {
 		i=i%numCards;
 		Colour c = knownColours[nextPlayer][i];
 		int value = knownValues[nextPlayer][i];
+		if(this.hands[nextPlayer][i]==null)
+			return Integer.MIN_VALUE;
 		if(c!=null && value!=0)
 		{
 			return (playable(this,c,value) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
@@ -1042,12 +1038,8 @@ public Action doAction(MyState s) {
 				return Integer.MIN_VALUE;
 			if(c.getValue()==5||playable(this,c.getColour(),c.getValue()))
 				return Integer.MAX_VALUE;
-			for(Colour s:Colour.values())
-			{
-				if(this.fireworks.get(s).size()!=0 && this.fireworks.get(s).peek().getValue()-c.getValue()==-1)
-					return Integer.MIN_VALUE;
-			}
-			return k*this.cardsLeftInDeck[this.mapColourToInt(c.getColour())][c.getValue()-1]*(this.theyArrived[playerToHint][card]);
+			return evaluateHint(this,playerToHint,c.getValue()+4);		
+			
 		}
 		return Integer.MIN_VALUE;
 	}
@@ -1056,26 +1048,17 @@ public Action doAction(MyState s) {
 		int playerToHint = (this.nextPlayer + (i/(this.numCards*2)))%this.numPlayers;
 		int card = i%this.numCards;
 		Card c = this.hands[playerToHint][card];
-		int k=1;
 		if(c!=null) {
-		for(Card s:this.hands[playerToHint]) {
-			if(s==null||c==null)continue;
-			if(s.getValue()==c.getValue()) k++ ;
-		}
-		if(hints>0) {
-			//wasnt too sure how good colour hinting is
-			return k*this.cardsLeftInDeck[this.mapColourToInt(c.getColour())][c.getValue()-1]*(this.theyArrived[playerToHint][card]);
-		}
+			if(hints>0) {
+				return evaluateHint(this,this.nextPlayer,this.mapColourToInt(c.getColour()));		
+			}
 		}
 		return Integer.MIN_VALUE;
 	}
 	
-	public Stack<Action> getBestPossibleMoves() throws IllegalActionException {
-		Stack<Action> bestmoves = new Stack<Action>();
-		Stack<Action> topplays = new Stack<Action>();
-		Stack<Action> allMoves = new Stack<Action>();
+	public PriorityQueue<Move> getBestPossibleMoves() throws IllegalActionException {
+		PriorityQueue<Move> bestmoves = new PriorityQueue<Move>(new MoveCompare());
 		ArrayList<String> actionStringList = new ArrayList<String>();
-		int threshold = Integer.MIN_VALUE;
 		for(int i = 0; i<numCards*2*numPlayers;i++)
 		{
 			int score;
@@ -1083,25 +1066,16 @@ public Action doAction(MyState s) {
 				score=playcard(i);
 				Action a = new Action(nextPlayer,
 						players[nextPlayer],
-						ActionType.PLAY,i%numCards);
-				if(score>threshold)
-				{
-					//topplays.add(a);
-					bestmoves.add(a);
-				}
-				if(score>0)
-					allMoves.add(a);
+						ActionType.PLAY,i%this.numCards);
+				if(score!=Integer.MIN_VALUE)
+					bestmoves.add(new Move(a,score));
 			}else if(i>=numCards && i<numCards*2) {
 				score=discardcard(i);
 				Action a=new Action(nextPlayer,
 						players[nextPlayer],
-						ActionType.DISCARD,i%numCards);
-				if(score>threshold)
-				{
-					bestmoves.push(a);
-				}
-				if(score>0)
-					allMoves.add(a);
+						ActionType.DISCARD,i%this.numCards);
+				if(score!=Integer.MIN_VALUE)
+					bestmoves.add(new Move(a, score));
 			}else{
 				int j=(int)i/this.numCards;
 				score= (j%2!=0?hintCardByValue(i):hintCardByColour(i));
@@ -1109,8 +1083,6 @@ public Action doAction(MyState s) {
 				int card = i%this.numCards;
 				Card c = this.hands[playerToHint][card];
 				if(c==null) continue;
-				if(score>threshold && c!=null)
-				{
 					if(j%2!=0)
 					{
 						boolean[] cards = new boolean[this.numCards];
@@ -1122,8 +1094,8 @@ public Action doAction(MyState s) {
 						Action newAct= new Action(this.nextPlayer,
 								this.players[this.nextPlayer],
 								ActionType.HINT_VALUE,playerToHint,cards,c.getValue());
-						if(!actionStringList.contains(newAct.toString())) {
-							bestmoves.push(newAct);
+						if(!actionStringList.contains(newAct.toString()) && score!=Integer.MIN_VALUE) {
+							bestmoves.add(new Move(newAct,score));
 							actionStringList.add(newAct.toString());
 						}
 							
@@ -1140,16 +1112,14 @@ public Action doAction(MyState s) {
 								this.players[this.nextPlayer],
 								ActionType.
 								HINT_COLOUR,playerToHint,cards,c.getColour());
-						if(!actionStringList.contains(newAct.toString())) {
-							bestmoves.push(newAct);
+						if(!actionStringList.contains(newAct.toString()) && score!=Integer.MIN_VALUE ) {
+							bestmoves.add(new Move(newAct,score));
 							actionStringList.add(newAct.toString());
 						}
 					}
-				}
 			}
 		}
-		while(!topplays.isEmpty()) bestmoves.add(topplays.pop());
-		return (bestmoves.size()==0?allMoves:bestmoves);
+		return bestmoves;
 	}
 	
 	public Object clone()
@@ -1169,10 +1139,10 @@ public Action doAction(MyState s) {
 		      }
 		      s.deck = (Stack<Card>) this.deck.clone();
 		      
-		      s.knownColours = new Colour[numPlayers][numCards];
-		      s.theyArrived = new int[numPlayers][numCards];
-		      s.knownValues = new int[numPlayers][numCards];
-		      for(int i=0;i<this.numPlayers;i++)
+		      s.knownColours = new Colour[s.numPlayers][s.numCards];
+		      s.theyArrived = new int[s.numPlayers][s.numCards];
+		      s.knownValues = new int[s.numPlayers][s.numCards];
+		      for(int i=0;i<s.numPlayers;i++)
 		      {
 		    	  s.knownColours[i] = s.knownColours[i].clone();
 		    	  s.theyArrived[i] =s.theyArrived[i].clone();
