@@ -35,7 +35,6 @@ public class agent implements Agent{
 		
 	public void init(State s) {		
 	    index = s.getNextPlayer();
-	    firstAction = false;
 		numPlayers = s.getPlayers().length;
 	    numCards = (numPlayers>3?4:5);
 	    knowColours = new Colour[numPlayers][numCards];
@@ -53,6 +52,24 @@ public class agent implements Agent{
 	    			cardsLeftInDeck[i][j] = 2;
 	    		}
 	    	}
+	    }
+	    //discards
+	    //plays
+	    
+	    Stack<Card> tempDisc = s.getDiscards();
+	    Stack<Card> tempFw;
+	    
+	    while(!tempDisc.isEmpty()){
+			Card c = tempDisc.pop();
+			cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue() - 1]--;
+	    }
+	    
+	    for(int i = 0; i < 5; i ++){
+	    	tempFw = s.getFirework(mapToColour(i));
+		    while(!tempFw.isEmpty()){
+				Card c = tempFw.pop();
+				cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue() - 1]--;
+		    }
 	    }
 	    
 	    for(int i = 0; i < numPlayers; i ++){
@@ -88,8 +105,11 @@ public class agent implements Agent{
 		         knowColours[a.getPlayer()][a.getCard()] = null;
 		         knowValues[a.getPlayer()][a.getCard()] = 0;
 	        	 Card replaced =  t.getHand(a.getPlayer())[a.getCard()];
-	        	 if(replaced != null){
+	        	 if(replaced != null && !firstAction){
 	        		 cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1]--;
+	        		 if(cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1] < 0 ){
+	        			System.out.println("ffs");
+	        		 }
 	        		 theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
 	        		 totalCards--;
 	        	 }
@@ -164,6 +184,8 @@ public class agent implements Agent{
 		
 		index = s.getNextPlayer();
 		updateLastActions(s);
+		firstAction = false;
+		
 		State current_state = (State) s.clone();
 		try {
 			int[][] cloneCardsLeftInDeck = new int[5][5];

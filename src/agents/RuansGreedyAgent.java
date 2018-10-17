@@ -45,14 +45,12 @@ public class RuansGreedyAgent implements Agent{
 	public String toString(){return "Ruan";}
 		
 	public void init(State s) {		
-		index = s.getNextPlayer();
-	    firstAction = false;
-
-	    numPlayers = s.getPlayers().length;
-	    numCards = (numPlayers>3)?4:5;
+	    index = s.getNextPlayer();
+		numPlayers = s.getPlayers().length;
+	    numCards = (numPlayers>3?4:5);
 	    knowColours = new Colour[numPlayers][numCards];
-	    knowValues = new int[numPlayers][numCards];
-	    theyArrived = new int[numPlayers][numCards];
+    	knowValues = new int[numPlayers][numCards];
+    	theyArrived = new int[numPlayers][numCards];
 	    
 	    cardsLeftInDeck = new int[5][5];
 	    for(int i = 0; i < 5; i ++){
@@ -65,6 +63,22 @@ public class RuansGreedyAgent implements Agent{
 	    			cardsLeftInDeck[i][j] = 2;
 	    		}
 	    	}
+	    }
+	    
+	    Stack<Card> tempDisc = s.getDiscards();
+	    Stack<Card> tempFw;
+	    
+	    while(!tempDisc.isEmpty()){
+			Card c = tempDisc.pop();
+			cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue() - 1]--;
+	    }
+	    
+	    for(int i = 0; i < 5; i ++){
+	    	tempFw = s.getFirework(mapToColour(i));
+		    while(!tempFw.isEmpty()){
+				Card c = tempFw.pop();
+				cardsLeftInDeck[mapColourToInt(c.getColour())][c.getValue() - 1]--;
+		    }
 	    }
 	    
 	    for(int i = 0; i < numPlayers; i ++){
@@ -103,7 +117,7 @@ public class RuansGreedyAgent implements Agent{
 	        	 knowColours[a.getPlayer()][a.getCard()] = null;
 	        	 knowValues[a.getPlayer()][a.getCard()] = 0;
 	        	 Card replaced =  t.getHand(a.getPlayer())[a.getCard()];
-	        	 if(replaced != null){
+	        	 if(replaced != null && !firstAction){
 	        		 cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1]--;
 	        		 if(cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1] < 0 ){
 	        			System.out.println("ffs");
@@ -148,7 +162,7 @@ public class RuansGreedyAgent implements Agent{
 		
 		index = s.getNextPlayer();
 		updateLastActions(s);
-	    
+	    firstAction = false;
 	    
 		int maxValue = 0;
 		int bestHint = -1;
@@ -361,6 +375,10 @@ public class RuansGreedyAgent implements Agent{
 		if(oldest == -1){
 			return null;
 		}else{
+			knowColours[index][oldest] = null;
+			knowValues[index][oldest] = 0;
+			theyArrived[index][oldest] = s.getOrder();
+			totalCards --;
 			return new Action(index, toString(), ActionType.DISCARD, oldest);
 		}
 
@@ -503,7 +521,7 @@ public class RuansGreedyAgent implements Agent{
 					}
 
 					if(finals[i]){
-						//score+=4;
+						//score+=2;
 					}
 				}
 			}else{
@@ -513,7 +531,7 @@ public class RuansGreedyAgent implements Agent{
 						score += 8; //could add some convention priority later
 					}
 					if(finals[i]){
-						//score+=5;
+						//score+=2;
 					}
 				}
 			}

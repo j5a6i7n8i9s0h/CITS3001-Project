@@ -86,9 +86,6 @@ public class Hanabi{
     Hanabi game= new Hanabi(agents);
     StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
     int result = game.play(log);
-    if(result == 0){
-    	System.out.println("yikes");
-    }
     log.append("The final score is "+result+".\n");
     log.append(critique(result));
     System.out.print(log);

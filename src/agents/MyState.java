@@ -490,6 +490,10 @@ public Action doAction(MyState s) {
 		if (oldest == -1) {
 			return null;
 		} else {
+			knownColours[index][oldest] = null;
+			knownValues[index][oldest] = 0;
+			theyArrived[index][oldest] = order;
+			totalCards --;
 			return new Action(index, toString(), ActionType.DISCARD, oldest);
 		}
 
