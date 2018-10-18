@@ -273,11 +273,11 @@ public class MyState implements Cloneable {
 	}
 	public int getScore() {
 		int score = 0;
-		if (fuse == 0)
+		if (this.fuse == 0)
 			return 0;
 		for (Colour c : Colour.values())
-			if (!fireworks.get(c).isEmpty())
-				score += fireworks.get(c).peek().getValue();
+			if (!this.fireworks.get(c).isEmpty())
+				score += this.fireworks.get(c).peek().getValue();
 		return score;
 	}
 	
@@ -292,7 +292,9 @@ public class MyState implements Cloneable {
     MyState s = (MyState) this.clone();
 	    while(!s.gameOver())
 	    {
-	    	s = (MyState) s.nextState(doAction(s), s.deck).clone();
+	    	Stack<Card> deck_copy = (Stack<Card>) s.deck.clone();
+	    	MyState m = (MyState) s.clone();
+	    	s = (MyState) s.nextState(doAction(m), deck_copy).clone();
 	    }
 	      
 	return s.getScore();

@@ -25,7 +25,8 @@ public class MCTS {
 		}
 
 		//System.out.println("done");
-		Action a= bestChild(root).action;
+		Node s = bestChild(root);
+		Action a= s.action;
 		return a;
 
 	}

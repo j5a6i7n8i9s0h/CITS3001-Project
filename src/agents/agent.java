@@ -212,13 +212,6 @@ public class agent implements Agent{
 			e.printStackTrace();
 		}
 		return null;
-//		 try {
-//			if(s.getHintTokens() > 7){
-//				return new Action(index, toString(), ActionType.PLAY,0);	
-//			}
-//			return new Action(index, toString(), ActionType.DISCARD,0);
-//		} catch (IllegalActionException e) {
-//			return null;
-//		}
+
 	}
 }
