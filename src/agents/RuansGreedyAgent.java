@@ -119,9 +119,6 @@ public class RuansGreedyAgent implements Agent{
 	        	 Card replaced =  t.getHand(a.getPlayer())[a.getCard()];
 	        	 if(replaced != null && !firstAction){
 	        		 cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1]--;
-	        		 if(cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1] < 0 ){
-	        			System.out.println("ffs");
-	        		 }
 	        		 theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
 	        	 //totalCards--;
 	        	 }
@@ -200,10 +197,11 @@ public class RuansGreedyAgent implements Agent{
 		    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 		      }
 	      }
-	      
+	      //if(a==null) a = hint(s, hintPlayer, bestHint);
 	      if(a==null) a = discardOldest(s);
-	      if(a==null) a = hint(s, hintPlayer, bestHint);
 	      if(a==null) a = guess(s);
+
+
 	      return a;
 	    }
 	    catch(IllegalActionException e){

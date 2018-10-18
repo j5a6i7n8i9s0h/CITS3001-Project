@@ -89,7 +89,9 @@ public class Hanabi{
 	int min = 25;
 	  
 	//Agent[] agents = {new agents.agent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent() , new agents.agent(), new agents.agent()};
-    Agent[] agents = {new agents.agent(), new agents.agent(), new agents.RuansGreedyAgent()};
+    Agent[] agents = {new agents.agent(), new agents.agent(),  new agents.agent()};
+	//Agent[] agents = {new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(),new agents.RuansGreedyAgent()};
+    
 /*	for(int i = 0; i < total; i++){
 		Agent[] agents = {new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(),new agents.RuansGreedyAgent()};
 		Hanabi game= new Hanabi(agents);
@@ -105,14 +107,14 @@ public class Hanabi{
 		//log.append("The final score is "+result+".\n");
 		//log.append(critique(result));
 		//System.out.print(log);
-	}*/
+	}
 	
-/*	System.out.println("Average score is " + score/total);
+	System.out.println("Average score is " + score/total);
 	System.out.println("max score is " + max);
 	System.out.println("min score is " + min);*/
   
-	//Agent[] agents = {new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(),new agents.RuansGreedyAgent()};
-	Hanabi game= new Hanabi(agents);
+
+    Hanabi game= new Hanabi(agents);
 	StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
 	int result = game.play(log);
 	log.append("The final score is "+result+".\n");
