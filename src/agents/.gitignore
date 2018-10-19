@@ -10,3 +10,5 @@
 /agent.class
 /Move.class
 /MoveCompare.class
+/MyStateV2.class
+/rolloutAction.class

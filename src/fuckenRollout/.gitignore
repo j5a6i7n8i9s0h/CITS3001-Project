@@ -1,10 +1,12 @@
+/Hanabi.class
 /Action.class
 /ActionType.class
 /Agent.class
 /Card.class
 /Colour.class
-/Hanabi.class
 /IllegalActionException.class
 /State.class
-/rolloutAction.class
 /MyState.class
+/Move.class
+/MoveCompare.class
+/RolloutAgent.class

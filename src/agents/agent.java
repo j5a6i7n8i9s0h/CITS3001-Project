@@ -14,7 +14,7 @@ import hanabAI.State;
 public class agent implements Agent{
 	static final int MAX_SCORE = 25;
 	static double EXPLORE = Math.sqrt(2);
-	static int BRANCH_FACTOR = 25;
+	static int BRANCH_FACTOR = 100;
 	
 	
 	private int totalCards = 50;
@@ -85,68 +85,73 @@ public class agent implements Agent{
 	}
 	
 	private void updateLastActions(State s) {
-	    
 		try{
 	        State t = (State) s.clone();
-
+	        Stack<Action> updateActions = new Stack<Action>();
+	        Stack<State> updateStates = new Stack<State>();
 	        for(int i = 0; i<Math.min(numPlayers-1,s.getOrder());i++){
-	          Action a = t.getPreviousAction();
-	          if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)){
-	            boolean[] hints = t.getPreviousAction().getHintedCards();
+	        	Action a = t.getPreviousAction();
+	        	updateActions.add(a);
+	        	updateStates.add(t);
+	        	t = t.getPreviousState();
+	        }
+	        
+	        Action a = t.getPreviousAction();
+			if(a != null){
+		        if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)){
+		            boolean[] hints = t.getPreviousAction().getHintedCards();
+		            for(int j = 0; j<hints.length; j++){
+		              if(hints[j]){
+		                if(a.getType()==ActionType.HINT_COLOUR) 
+		                  knowColours[a.getHintReceiver()][j] = a.getColour();
+		                else
+		                  knowValues[a.getHintReceiver()][j] = a.getValue();  
+		              }
+		            }
+		        }else{
+		        	Stack<Card> temp = t.getDiscards();
+		        	
+		        	if(t.getPreviousState().getDiscards().size() < temp.size()){
+		        		cardsLeftInDeck[mapColourToInt(temp.peek().getColour())][temp.peek().getValue()-1]--;
+   			         	knowColours[a.getPlayer()][a.getCard()] = null;
+   			         	knowValues[a.getPlayer()][a.getCard()] = 0;
+		        	}else{
+		        		for(Colour c: Colour.values()){
+		        			Stack<Card> tempFw = t.getFirework(c);
+		    	        	if(t.getPreviousState().getFirework(c).size() < tempFw.size()){
+		    	        		cardsLeftInDeck[mapColourToInt(tempFw.peek().getColour())][tempFw.peek().getValue()-1]--;
+		    			         knowColours[a.getPlayer()][a.getCard()] = null;
+		    			         knowValues[a.getPlayer()][a.getCard()] = 0;
+		    	        	}
+		    	        }
+		        	}
+		        }
+			}
+	        while(!updateActions.isEmpty()){
+	          Action updateAction = updateActions.pop();
+	          State updateState =  updateStates.pop();
+	          if((updateAction.getType()==ActionType.HINT_COLOUR || updateAction.getType() == ActionType.HINT_VALUE)){
+	            boolean[] hints = updateAction.getHintedCards();
 	            for(int j = 0; j<hints.length; j++){
 	              if(hints[j]){
-	                if(a.getType()==ActionType.HINT_COLOUR) 
-	                  knowColours[a.getHintReceiver()][j] = a.getColour();
+	                if(updateAction.getType()==ActionType.HINT_COLOUR) 
+	                  knowColours[updateAction.getHintReceiver()][j] = updateAction.getColour();
 	                else
-	                  knowValues[a.getHintReceiver()][j] = a.getValue();  
+	                  knowValues[updateAction.getHintReceiver()][j] = updateAction.getValue();  
 	              }
 	            }
 	          }else{
-		         knowColours[a.getPlayer()][a.getCard()] = null;
-		         knowValues[a.getPlayer()][a.getCard()] = 0;
-	        	 Card replaced =  t.getHand(a.getPlayer())[a.getCard()];
+		         knowColours[updateAction.getPlayer()][updateAction.getCard()] = null;
+		         knowValues[updateAction.getPlayer()][updateAction.getCard()] = 0;
+	        	 Card replaced =  updateState.getHand(updateAction.getPlayer())[updateAction.getCard()];
 	        	 if(replaced != null && !firstAction){
 	        		 cardsLeftInDeck[mapColourToInt(replaced.getColour())][replaced.getValue()-1]--;
-	        		 theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
+	        		 theyArrived[updateAction.getPlayer()][updateAction.getCard()] = updateState.getOrder();
 	        		 totalCards--;
 	        	 }
 
 	          }
-	         
-	          t = t.getPreviousState();
 	        }
-	        Action a = t.getPreviousAction();
-			if(a == null){return;}
-			
-			
-	        if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)){
-	            boolean[] hints = t.getPreviousAction().getHintedCards();
-	            for(int j = 0; j<hints.length; j++){
-	              if(hints[j]){
-	                if(a.getType()==ActionType.HINT_COLOUR) 
-	                  knowColours[a.getHintReceiver()][j] = a.getColour();
-	                else
-	                  knowValues[a.getHintReceiver()][j] = a.getValue();  
-	              }
-	            }
-	        }else{
-		        knowColours[a.getPlayer()][a.getCard()] = null;
-		        knowValues[a.getPlayer()][a.getCard()] = 0;
-	        	
-	        	Stack<Card> temp = t.getDiscards();
-	        	
-	        	if(t.getPreviousState().getDiscards().size() < temp.size()){
-	        		cardsLeftInDeck[mapColourToInt(temp.peek().getColour())][temp.peek().getValue()-1]--;
-	        	}else{
-	        		for(Colour c: Colour.values()){
-	        			Stack<Card> tempFw = t.getFirework(c);
-	    	        	if(t.getPreviousState().getFirework(c).size() < tempFw.size()){
-	    	        		cardsLeftInDeck[mapColourToInt(tempFw.peek().getColour())][tempFw.peek().getValue()-1]--;
-	    	        	}
-	    	        }
-	        	}
-	        }
-	        
 	      }
 	      catch(IllegalActionException e){e.printStackTrace();}
 	}

@@ -1,4 +1,4 @@
-package hanabAI;
+package fuckenRollout;
 import java.util.*;
 /**
  * Represent the game state in Hanabi.

@@ -17,7 +17,7 @@ public class MCTS {
 	}
 	
 	public Action MCTSsearch() throws CloneNotSupportedException, IllegalActionException{
-		long timeLimit = System.currentTimeMillis() + 180;
+		long timeLimit = System.currentTimeMillis() + 880;
 		Node currentNode = root;
 		while(System.currentTimeMillis() < timeLimit){
 			currentNode = Select(root);
@@ -43,8 +43,8 @@ public class MCTS {
 
 	private Node Expand(Node lastNode) throws IllegalActionException, CloneNotSupportedException {
 		Action action = lastNode.expandable.poll().getAction();
-		MyState newState = (MyState) lastNode.state.clone();
-		Node child = new Node(lastNode, newState.nextState(action, newState.getDeck()),action);
+		MyState newState = (MyState) lastNode.state.nextState(lastNode.state, action);
+		Node child = new Node(lastNode,newState,action);
 		lastNode.children.add(child);
 		return child;
 	}
