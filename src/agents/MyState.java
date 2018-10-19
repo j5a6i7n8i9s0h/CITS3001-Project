@@ -493,7 +493,7 @@ public class MyState implements Cloneable {
 		int oldest = -1;
 		// find oldest un-hinted card
 		for (int i = 0; i < numCards; i++) {
-			if (s.knownValues[s.index][age[i]] == 0 || s.knownColours[s.index][age[i]] == null) {
+			if (s.knownValues[s.index][age[i]] == 0 && s.knownColours[s.index][age[i]] == null) {
 				oldest = age[i];
 			}
 		}

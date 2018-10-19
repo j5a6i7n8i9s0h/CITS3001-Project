@@ -111,7 +111,8 @@ public class RuansGreedyAgent implements Agent{
 	        Action a = t.getPreviousAction();
 			if(a != null){
 		        if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE)){
-		            boolean[] hints = t.getPreviousAction().getHintedCards();
+		            
+		        	boolean[] hints = t.getPreviousAction().getHintedCards();
 		            for(int j = 0; j<hints.length; j++){
 		              if(hints[j]){
 		                if(a.getType()==ActionType.HINT_COLOUR) 
@@ -143,6 +144,9 @@ public class RuansGreedyAgent implements Agent{
 	          Action updateAction = updateActions.pop();
 	          State updateState =  updateStates.pop();
 	          if((updateAction.getType()==ActionType.HINT_COLOUR || updateAction.getType() == ActionType.HINT_VALUE)){
+		        if((updateAction.getPlayer()+1)%numPlayers == index){
+		        	lastHint = updateAction;
+		        }
 	            boolean[] hints = updateAction.getHintedCards();
 	            for(int j = 0; j<hints.length; j++){
 	              if(hints[j]){
@@ -215,11 +219,11 @@ public class RuansGreedyAgent implements Agent{
 	      }
 
 
-	      if(s.getHintTokens() > 5){
+	      if(s.getHintTokens() > 4){
 	    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 	      }
 	      if(a==null) a = discardDuplicate(s);
-	      //if(a==null) a = discardOldest(s);
+	      if(a==null) a = discardOldest(s);
 	      if(a==null) a = guess(s);
 
 	      if(s.getFinalActionIndex() == s.getOrder()){
@@ -300,8 +304,28 @@ public class RuansGreedyAgent implements Agent{
 	      return null;
 	}
 	private Action playLastHint(State s) throws IllegalActionException {
-		if(s.getFuseTokens() < 3 || lastHint == null){return null;}
 		
+		//dont risk it if we have no fuses.
+		if(s.getFuseTokens() < 2 || lastHint == null){return null;}
+		
+		
+		//make sure that the hint is alteast playable somewhere
+		
+		if(lastHint.getType() == ActionType.HINT_COLOUR){
+			//if colour is already stacked or atleast 1 playable card exists
+			Colour hintedColour = lastHint.getColour();
+			int top = topFw(s, hintedColour);
+			if(top == 5||cardsLeftInDeck[mapColourToInt(hintedColour)][top] == 0){return null;}
+		}else{
+			boolean matchTop = false;
+			for(Colour c: Colour.values()){
+				if(topFw(s, c) == lastHint.getValue()-1){matchTop = true;}
+			}
+			//if no value has no playable moves
+			if(!matchTop){return null;}
+		}
+		
+		//chec that the hint highlights 1 card only, then assume we can play it
 		int card = 0;
 		int total = 0;
 		
@@ -404,7 +428,7 @@ public class RuansGreedyAgent implements Agent{
 		int oldest = -1;
 		//find oldest un-hinted card
 		for(int i = 0; i < numCards; i ++){
-			if(knowValues[index][age[i]] == 0 || knowColours[index][age[i]] == null){
+			if(knowValues[index][age[i]] == 0 && knowColours[index][age[i]] == null){
 				oldest = age[i];
 			}
 		}
