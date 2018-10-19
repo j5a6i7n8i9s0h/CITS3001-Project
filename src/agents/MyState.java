@@ -19,6 +19,8 @@ public class MyState implements Cloneable {
 	int numPlayers;
 	int numCards;
 	int index;
+	int rootIndex;
+	int penalty;
 
 	/** The name of each of the players in the game **/
 	String[] players;
@@ -77,27 +79,30 @@ public class MyState implements Cloneable {
 		this.numPlayers = s.getPlayers().length;
 		this.theyArrived = theyArrived;
 		this.numCards = (this.players.length > 3 ? 4 : 5);
-		this.deck = new Stack<Card>();
+		this.index = s.getNextPlayer();
+		this.rootIndex = s.getNextPlayer();
 		dealMyCards();
 	}
 	
 	private void dealMyCards(){
+		deck = new Stack<Card>();
+		hands[rootIndex] = new Card[numCards];
  	    for(int i = 0; i < numCards; i ++){
- 	      if(knownValues[nextPlayer][i]> 0 && knownColours[nextPlayer][i] != null){
- 	        cardsLeftInDeck[mapColourToInt(knownColours[nextPlayer][i])][knownValues[nextPlayer][i]-1]--;
- 	        if(cardsLeftInDeck[mapColourToInt(knownColours[nextPlayer][i])][knownValues[nextPlayer][i]-1] < 0){
+ 	      if(knownValues[rootIndex][i]> 0 && knownColours[rootIndex][i] != null){
+ 	        cardsLeftInDeck[mapColourToInt(knownColours[rootIndex][i])][knownValues[rootIndex][i]-1]--;
+ 	        if(cardsLeftInDeck[mapColourToInt(knownColours[rootIndex][i])][knownValues[rootIndex][i]-1] < 0){
  	        	System.out.println("help");
  	        }
- 	        hands[nextPlayer][i] = new Card(knownColours[nextPlayer][i], knownValues[nextPlayer][i]);
+ 	        hands[rootIndex][i] = new Card(knownColours[rootIndex][i], knownValues[rootIndex][i]);
  	      }
  	    }
  	   for(int i = 0; i < numCards; i ++){
  	      
- 		   if(hands[nextPlayer][i] != null){continue;}
- 		   if(knownValues[nextPlayer][i]> 0 ){
+ 		   if(hands[rootIndex][i] != null){continue;}
+ 		   if(knownValues[rootIndex][i]> 0 ){
  	      	int total = 0;
  	        for(Colour c: Colour.values()){
- 	          total += cardsLeftInDeck[mapColourToInt(c)][knownValues[nextPlayer][i]-1];
+ 	          total += cardsLeftInDeck[mapColourToInt(c)][knownValues[rootIndex][i]-1];
  	        }
  	        if(total == 0){continue;}//can improve later with hungarian
  	        int counter = -1;
@@ -105,18 +110,18 @@ public class MyState implements Cloneable {
 
  	 	      int pick = r.nextInt(total) + 1;
  	        while(pick > 0){
- 	          pick -= cardsLeftInDeck[++counter][knownValues[nextPlayer][i]-1];
+ 	          pick -= cardsLeftInDeck[++counter][knownValues[rootIndex][i]-1];
  	        }
- 	        cardsLeftInDeck[counter][knownValues[nextPlayer][i]-1]--;
- 	        hands[nextPlayer][i] = new Card(mapToColour(counter), knownValues[nextPlayer][i]);
+ 	        cardsLeftInDeck[counter][knownValues[rootIndex][i]-1]--;
+ 	        hands[rootIndex][i] = new Card(mapToColour(counter), knownValues[rootIndex][i]);
  	      }
  	   }
  	   for(int i = 0; i < numCards; i ++){
- 		  if(hands[nextPlayer][i] != null){continue;}
- 	       if(knownColours[nextPlayer][i] != null){
+ 		  if(hands[rootIndex][i] != null){continue;}
+ 	       if(knownColours[rootIndex][i] != null){
  	    	   int total = 0;
  	    	   for(int j = 0; j < 5; j ++){
- 	    		   total += cardsLeftInDeck[mapColourToInt(knownColours[nextPlayer][i])][j];
+ 	    		   total += cardsLeftInDeck[mapColourToInt(knownColours[rootIndex][i])][j];
  	    	   }
  	    	   if(total == 0){continue;}
  	    	   int counter = -1;
@@ -124,19 +129,19 @@ public class MyState implements Cloneable {
 
  	 	       int pick = r.nextInt(total) + 1;
  	 	       while(pick > 0){
- 	 	    	   pick -= cardsLeftInDeck[mapColourToInt(knownColours[nextPlayer][i])][++counter];
+ 	 	    	   pick -= cardsLeftInDeck[mapColourToInt(knownColours[rootIndex][i])][++counter];
  	 	       }
- 	 	       cardsLeftInDeck[mapColourToInt(knownColours[nextPlayer][i])][counter]--;
- 	 	       hands[nextPlayer][i] = new Card(knownColours[nextPlayer][i], counter+1);
+ 	 	       cardsLeftInDeck[mapColourToInt(knownColours[rootIndex][i])][counter]--;
+ 	 	       hands[rootIndex][i] = new Card(knownColours[rootIndex][i], counter+1);
  	      }
  	    }
  	    
  	    makeDeck();
  	    
  	    for(int i = 0; i < numCards; i ++){
- 	      if(hands[nextPlayer][i] == null){
+ 	      if(hands[rootIndex][i] == null){
  	    	  if(!deck.isEmpty()){
- 	    		  hands[nextPlayer][i] = deck.pop();
+ 	    		  hands[rootIndex][i] = deck.pop();
  	    	  }
  	      }
  	    }
@@ -196,14 +201,17 @@ public class MyState implements Cloneable {
 	}
 
 	public MyState nextState(MyState previous, Action action) throws IllegalActionException, CloneNotSupportedException {
-//		if (!legalAction(action)) 
-//			throw new IllegalActionException("Invalid action!: " + action);
+		if (!previous.legalAction(action)) 
+			throw new IllegalActionException("Invalid action!: " + action);
 		if (gameOver())
 			throw new IllegalActionException("Game Over!");
 		MyState next = (MyState) previous.clone();
-
+		
 		switch (action.getType()) {
 		case PLAY:
+			
+			next.penalty = previous.givePenalty(action);
+			
 			Card c = previous.hands[action.getPlayer()][action.getCard()];
 			Stack<Card> fw = previous.fireworks.get(c.getColour());
 			if ((fw.isEmpty() && c.getValue() == 1) || (!fw.isEmpty() && fw.peek().getValue() == c.getValue() - 1)) {
@@ -272,10 +280,24 @@ public class MyState implements Cloneable {
 		//s.previousState = this;
 		return next;
 	}
+	private int givePenalty(Action action) throws IllegalActionException {
+/*		int value = knownValues[action.getPlayer()][action.getCard()];
+		Colour colour = knownColours[action.getPlayer()][action.getCard()];
+		
+		if(value == 0 && colour == null && totalCards > 10){
+			return 5;
+		}
+		if((value == 0 || colour == null) && totalCards > 35){
+			return 1;
+		}
+*/
+		return 0;
+	}
+
 	public int getScore() {
 		int score = 0;
-		//if (fuse == 0)
-		//	return 0;
+		if (fuse == 0)
+			return 0;
 		for (Colour c : Colour.values())
 			if (!fireworks.get(c).isEmpty())
 				score += fireworks.get(c).peek().getValue();
@@ -291,17 +313,23 @@ public class MyState implements Cloneable {
 	public int Rollout() throws CloneNotSupportedException, IllegalActionException {
 
     MyState s = (MyState) this.clone();
-	    while(!s.gameOver())
-	    {
-	    	Action a = rolloutAction.doAction(s);
-	    	s = (MyState) nextState(s, a);  
+	for(int i = 0; i < s.numCards; i ++){
+		if( s.hands[rootIndex][i] == null){continue;}
+		int colour = mapColourToInt(s.hands[rootIndex][i].getColour());
+		int value = s.hands[rootIndex][i].getValue();
+		s.cardsLeftInDeck[colour][value-1] ++;
+	}
+	s.dealMyCards();
+    while(!s.gameOver()){
+    	Action a = rolloutAction.doAction(s);
+	    s = (MyState) nextState(s, a);  
+
 	    	//System.out.println();
 	    }
-	    int score = s.getScore();
-	return s.getScore();
+		return s.getScore() - penalty;
 	}
 
-public Action doAction(MyState s) {
+	public Action doAction(MyState s) {
 		s.index = s.nextPlayer;
 
 		int maxValue = 0;
@@ -364,32 +392,14 @@ public Action doAction(MyState s) {
 		for (int i = 0; i < numCards; i++) {
 			if (s.knownColours[s.index][i] != null && s.knownValues[s.index][i] != 0) {
 				if (playable(s, s.knownColours[s.index][i], s.knownValues[s.index][i])) {
-					//s.knownColours[s.index][i] = null;
-					//s.knownValues[s.index][i] = 0;
-					//s.theyArrived[s.index][i] = s.order;
-
-					//s.totalCards--;
-
 					return new Action(s.index, toString(), ActionType.PLAY, i);
 				}
 			} else if (s.knownValues[s.index][i] != 0) {
 				if (playable(s, s.knownValues[s.index][i])) {
-					//s.knownColours[s.index][i] = null;
-					//s.knownValues[s.index][i] = 0;
-					//s.theyArrived[s.index][i] = s.order;
-
-					//s.totalCards--;
-
 					return new Action(s.index, toString(), ActionType.PLAY, i);
 				}
 			} else if (s.knownColours[s.index][i] != null) {
 				if (playable(s, s.knownColours[s.index][i])) {
-					//s.knownColours[s.index][i] = null;
-					//s.knownValues[s.index][i] = 0;
-					//s.theyArrived[s.index][i] = s.order;
-
-					//s.totalCards--;
-
 					return new Action(s.index, toString(), ActionType.PLAY, i);
 				}
 			} else {
@@ -404,27 +414,15 @@ public Action doAction(MyState s) {
 			for (int i = 0; i < numCards; i++) {
 				if (s.knownColours[s.index][i] != null && s.knownValues[s.index][i] > 0) {
 					if (discardable(s, s.knownColours[s.index][i], s.knownValues[s.index][i])) {
-						//s.knownColours[s.index][i] = null;
-						//s.knownValues[s.index][i] = 0;
-						//s.theyArrived[s.index][i] = s.order;
-						//s.totalCards--;
 						return new Action(s.index, toString(), ActionType.DISCARD, i);
 					}
 
 				} else if (s.knownValues[s.index][i] != 0) {
 					if (discardable(s, s.knownValues[s.index][i])) {
-						//s.knownColours[s.index][i] = null;
-						//s.knownValues[s.index][i] = 0;
-						//s.theyArrived[s.index][i] = s.order;
-						//s.totalCards--;
 						return new Action(s.index, toString(), ActionType.DISCARD, i);
 					}
 				} else if (s.knownColours[s.index][i] != null) {
 					if (discardable(s, s.knownColours[s.index][i])) {
-						//s.knownColours[s.index][i] = null;
-						//s.knownValues[s.index][i] = 0;
-						//s.theyArrived[s.index][i] = s.order;
-						//s.totalCards--;
 						return new Action(s.index, toString(), ActionType.DISCARD, i);
 					}
 				} else {
@@ -565,17 +563,6 @@ public Action doAction(MyState s) {
 
 				}
 				numTotal = s.totalCards;
-				for (int p = 0; p < numPlayers; p++) {
-					if (p == s.index) {
-						continue;
-					}
-					for (int j = 0; j < numCards; j++) {
-						if (s.hands[p][j] == null) {
-							continue;
-						}
-						numTotal -= 1;
-					}
-				}
 			}
 
 			if(numPlayable != 0){
@@ -597,20 +584,8 @@ public Action doAction(MyState s) {
 		}
 
 		if (probCorrectDiscard >= probCorrectPlay || s.fuse < 2) {
-			//s.knownColours[s.index][discard] = null;
-			//s.knownValues[s.index][discard] = 0;
-			//s.theyArrived[s.index][discard] = s.order;
-			//s.totalCards--;
-
-
 			return new Action(s.index, toString(), ActionType.DISCARD, discard);
 		} else {
-			//s.knownColours[s.index][play] = null;
-			//s.knownValues[s.index][play] = 0;
-			//s.theyArrived[s.index][play] = s.order;
-			//s.totalCards--;
-
-
 			return new Action(s.index, toString(), ActionType.PLAY, play);
 		}
 
@@ -857,7 +832,14 @@ public Action doAction(MyState s) {
 		}
 
 		boolean playable = true;
-
+		
+		for(int i = 0; i < numCards; i ++){
+			if( s.hands[s.index][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[s.index][i].getColour());
+			int v = s.hands[s.index][i].getValue();
+			s.cardsLeftInDeck[colour][v-1] ++;
+		}
+		
 		for (int j = 0; j < 5; j++) {
 			if (!canPlay[j]) {
 				int inPlay = s.cardsLeftInDeck[j][value - 1];
@@ -865,6 +847,13 @@ public Action doAction(MyState s) {
 					playable = false;
 				}
 			}
+		}
+		
+		for(int i = 0; i < numCards; i ++){
+			if( s.hands[s.index][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[s.index][i].getColour());
+			int v = s.hands[s.index][i].getValue();
+			s.cardsLeftInDeck[colour][v-1] --;
 		}
 
 		return playable;
@@ -881,7 +870,14 @@ public Action doAction(MyState s) {
 			toPlay = top;
 
 		boolean playable = true;
-
+		
+		for(int i = 0; i < numCards; i ++){
+			if( s.hands[s.index][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[s.index][i].getColour());
+			int value = s.hands[s.index][i].getValue();
+			s.cardsLeftInDeck[colour][value-1] ++;
+		}
+		
 		for (int j = 0; j < 5; j++) {
 			if (j != toPlay) {
 				int inPlay = s.cardsLeftInDeck[mapColourToInt(c)][j];
@@ -889,6 +885,13 @@ public Action doAction(MyState s) {
 					playable = false;
 				}
 			}
+		}
+		
+		for(int i = 0; i < numCards; i ++){
+			if( s.hands[s.index][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[s.index][i].getColour());
+			int value = s.hands[s.index][i].getValue();
+			s.cardsLeftInDeck[colour][value-1] --;
 		}
 
 		return playable;
@@ -942,6 +945,11 @@ public Action doAction(MyState s) {
 		}
 
 		return discardable;
+	}
+	
+	public Stack<Card> getDeck()
+	{
+		return (Stack<Card>) deck.clone();
 	}
 
 	int mapColourToInt(Colour c) {
@@ -1019,11 +1027,7 @@ public Action doAction(MyState s) {
 	}
 	
 	
-	public Stack<Card> getDeck()
-	{
-		return (Stack<Card>) deck.clone();
-	}
-	
+
 	public int playcard(int i) {
 		i=i%numCards;
 		Colour c = knownColours[nextPlayer][i];
@@ -1032,20 +1036,21 @@ public Action doAction(MyState s) {
 			return Integer.MIN_VALUE;
 		if(c!=null && value!=0)
 		{
-			return (playable(this,c,value) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
+			return ((playable(this,c,value)||fuse>1) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
 		}
 		else if(c!=null) // only colour known
 		{
-			return (playable(this,c) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
+			return ((playable(this,c)||fuse>1) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
 		}
 		else if(value!=0) // only val known
 		{
-			return (playable(this,value) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
+			return ((playable(this,value)||fuse>1) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
 		}
 		else
 		{
-			return Integer.MIN_VALUE;
+			return ((fuse>1) ?Integer.MAX_VALUE: Integer.MIN_VALUE);
 		}
+			
 	}
 	
 	public int hintCardByValue(int i) {
@@ -1094,7 +1099,7 @@ public Action doAction(MyState s) {
 				Action a = new Action(nextPlayer,
 						players[nextPlayer],
 						ActionType.PLAY,i%this.numCards);
-				if(score!=Integer.MIN_VALUE)
+				if(score!=Integer.MIN_VALUE) 
 					bestmoves.add(new Move(a,score));
 			}else if(i>=numCards && i<numCards*2) {
 				score=discardcard(i);
@@ -1173,7 +1178,7 @@ public Action doAction(MyState s) {
 		      for(int i=0;i<s.numPlayers;i++)
 		      {
 		    	  s.knownColours[i] = knownColours[i].clone();
-		    	  s.theyArrived[i] =theyArrived[i].clone();
+		    	  s.theyArrived[i] = theyArrived[i].clone();
 		    	  s.knownValues[i] = knownValues[i].clone();
 		      }
  		      return s;

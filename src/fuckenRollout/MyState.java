@@ -182,7 +182,6 @@ public class MyState implements Cloneable {
 	public Action doAction(MyState s) {
 
 		index = nextPlayer;
-	    
 		int maxValue = 0;
 		int bestHint = -1;
 		int hintPlayer = (index+1)%numPlayers;
@@ -219,7 +218,8 @@ public class MyState implements Cloneable {
 		    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 		      }
 	      }
-	      //if(a==null) a = hint(s, hintPlayer, bestHint);
+	      if(a==null) a = discardDuplicate(s);
+	      if(a==null) a = hint(s, hintPlayer, bestHint);
 	      if(a==null) a = discardOldest(s);
 	      if(a==null) a = guess(s);
 
@@ -232,6 +232,45 @@ public class MyState implements Cloneable {
 	    }
 	}
 	
+
+
+	private Action discardDuplicate(MyState s) throws IllegalActionException {
+		if(hints > 3){return null;}
+		int[] discards = new int[numCards];
+		for(int i = 0; i < numCards; i ++){
+			int value = knowValues[index][i];
+			Colour colour = knowColours[index][i];
+			if(value > 0 && colour != null){
+				if(cardsLeftInDeck[mapColourToInt(colour)][value-1] > 1){
+					return new Action(index, toString(), ActionType.DISCARD,i);
+				}
+			}
+			else if(value > 0){
+				boolean canDiscard = true;
+				for(Colour c: Colour.values()){
+					if(topFw(s,c) <= value && cardsLeftInDeck[mapColourToInt(c)][value-1] == 1){
+						canDiscard = false;
+					}
+				}
+				if(canDiscard){
+					return new Action(index, toString(), ActionType.DISCARD,i);
+				}
+			}else if(colour != null){
+				boolean canDiscard = true;
+				for(int v = 0; v < 5; v++){
+					if(topFw(s,colour) < v && cardsLeftInDeck[mapColourToInt(colour)][v] == 1){
+						canDiscard = false;
+					}
+				}
+				if(canDiscard){
+					return new Action(index, toString(), ActionType.DISCARD,i);
+				}
+			}
+		}
+		
+		return null;
+	}
+
 
 
 	private Action playKnown(MyState s) throws IllegalActionException{
@@ -437,13 +476,6 @@ public class MyState implements Cloneable {
 					
 				}
 				numTotal = totalCards;
-				for(int p = 0; p < numPlayers; p ++){
-					if(p == index){continue;}
-					for(int j = 0; j < numCards; j ++){
-						if(s.hands[p][j] == null){continue;}
-						numTotal -= 1;
-					}
-				}
 			}
 			
 			if(numPlayable != 0){

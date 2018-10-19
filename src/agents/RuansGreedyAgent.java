@@ -14,6 +14,7 @@ package agents;
 
 import java.util.Stack;
 
+import fuckenRollout.MyState;
 import hanabAI.Action;
 import hanabAI.ActionType;
 import hanabAI.Agent;
@@ -121,20 +122,18 @@ public class RuansGreedyAgent implements Agent{
 		            }
 		        }else{
 		        	Stack<Card> temp = t.getDiscards();
-		        	
+			         	knowColours[a.getPlayer()][a.getCard()] = null;
+			         	knowValues[a.getPlayer()][a.getCard()] = 0;
+			         	theyArrived[a.getPlayer()][a.getCard()] = t.getOrder();
+			         	totalCards--;
 		        	if(t.getPreviousState().getDiscards().size() < temp.size()){
 		        		cardsLeftInDeck[mapColourToInt(temp.peek().getColour())][temp.peek().getValue()-1]--;
-   			         	knowColours[a.getPlayer()][a.getCard()] = null;
-   			         	knowValues[a.getPlayer()][a.getCard()] = 0;
-   			         	totalCards--;
+
 		        	}else{
 		        		for(Colour c: Colour.values()){
 		        			Stack<Card> tempFw = t.getFirework(c);
 		    	        	if(t.getPreviousState().getFirework(c).size() < tempFw.size()){
 		    	        		cardsLeftInDeck[mapColourToInt(tempFw.peek().getColour())][tempFw.peek().getValue()-1]--;
-		    			         knowColours[a.getPlayer()][a.getCard()] = null;
-		    			         knowValues[a.getPlayer()][a.getCard()] = 0;
-		    			         totalCards--;
 		    	        	}
 		    	        }
 		        	}
@@ -216,15 +215,16 @@ public class RuansGreedyAgent implements Agent{
 	      }
 
 
-	      if(s.getHintTokens() > 2){
+	      if(s.getHintTokens() > 5){
 	    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 	      }
-	      if(a==null) a = discardOldest(s);
+	      if(a==null) a = discardDuplicate(s);
+	      //if(a==null) a = discardOldest(s);
 	      if(a==null) a = guess(s);
 
 	      if(s.getFinalActionIndex() == s.getOrder()){
-	    	  if(s.getScore() < 3){
-	    		  System.out.println("F_U_C_K");
+	    	  if(s.getScore() < 5){
+	    		  System.out.println("idiot ai");
 	    	  }
 	      }
 	      return a;
@@ -235,6 +235,42 @@ public class RuansGreedyAgent implements Agent{
 	    }
 	}
 	
+	private Action discardDuplicate(State s) throws IllegalActionException {
+		if(s.getHintTokens() > 3){return null;}
+		int[] discards = new int[numCards];
+		for(int i = 0; i < numCards; i ++){
+			int value = knowValues[index][i];
+			Colour colour = knowColours[index][i];
+			if(value > 0 && colour != null){
+				if(cardsLeftInDeck[mapColourToInt(colour)][value-1] > 1){
+					return new Action(index, toString(), ActionType.DISCARD,i);
+				}
+			}
+			else if(value > 0){
+				boolean canDiscard = true;
+				for(Colour c: Colour.values()){
+					if(topFw(s,c) <= value && cardsLeftInDeck[mapColourToInt(c)][value-1] == 1){
+						canDiscard = false;
+					}
+				}
+				if(canDiscard){
+					return new Action(index, toString(), ActionType.DISCARD,i);
+				}
+			}else if(colour != null){
+				boolean canDiscard = true;
+				for(int v = 0; v < 5; v++){
+					if(topFw(s,colour) < v && cardsLeftInDeck[mapColourToInt(colour)][v] == 1){
+						canDiscard = false;
+					}
+				}
+				if(canDiscard){
+					return new Action(index, toString(), ActionType.DISCARD,i);
+				}
+			}
+		}
+		
+		return null;
+	}
 
 
 	private Action playKnown(State s) throws IllegalActionException{
@@ -436,13 +472,6 @@ public class RuansGreedyAgent implements Agent{
 					
 				}
 				numTotal = totalCards;
-				for(int p = 0; p < numPlayers; p ++){
-					if(p == index){continue;}
-					for(int j = 0; j < numCards; j ++){
-						if(s.getHand(p)[j] == null){continue;}
-						numTotal -= 1;
-					}
-				}
 			}
 			
 			if(numPlayable != 0){
@@ -682,7 +711,7 @@ public class RuansGreedyAgent implements Agent{
 		
 	    for(int i = 0; i < numPlayers; i ++){
 	    	for(int j = 0; j < numCards; j ++){
-	    		theyArrived[i][j] = 1;
+	    		//theyArrived[i][j] = 1;
 	    		if(i != index){
 	    			Card c = s.getHand(i)[j];
 	    			if(c == null){continue;}

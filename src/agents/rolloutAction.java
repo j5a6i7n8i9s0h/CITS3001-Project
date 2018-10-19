@@ -264,13 +264,7 @@ public class rolloutAction{
 					
 				}
 				numTotal = s.totalCards;
-				for(int p = 0; p < s.numPlayers; p ++){
-					if(p == s.index){continue;}
-					for(int j = 0; j < s.numCards; j ++){
-						if(s.hands[p][j] == null){continue;}
-						numTotal -= 1;
-					}
-				}
+
 			}
 			
 			if(numPlayable != 0){
@@ -554,11 +548,25 @@ public class rolloutAction{
 		
 		boolean playable = true;
 		
+		for(int i = 0; i < s.numCards; i ++){
+			if( s.hands[s.index][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[s.index][i].getColour());
+			int v = s.hands[s.index][i].getValue();
+			s.cardsLeftInDeck[colour][value-1] ++;
+		}
+		
 		for(int j = 0 ; j < 5; j++){
 			if(!canPlay[j]){
 				int inPlay = s.cardsLeftInDeck[j][value-1];
 				if(inPlay != 0){playable = false;}
 			}
+		}
+		
+		for(int i = 0; i < s.numCards; i ++){
+			if( s.hands[s.index][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[s.index][i].getColour());
+			int v = s.hands[s.index][i].getValue();
+			s.cardsLeftInDeck[colour][value-1] --;
 		}
 		
 		return playable;
@@ -575,11 +583,25 @@ public class rolloutAction{
 	    
 		boolean playable = true;
 		
+		for(int i = 0; i < s.numCards; i ++){
+			if( s.hands[s.index][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[s.index][i].getColour());
+			int value = s.hands[s.index][i].getValue();
+			s.cardsLeftInDeck[colour][value-1] ++;
+		}
+		
 		for(int j = 0 ; j < 5; j++){
 			if(j != toPlay){
 				int inPlay = s.cardsLeftInDeck[mapColourToInt(c)][j];
 				if(inPlay != 0){playable = false;}
 			}
+		}
+		
+		for(int i = 0; i < s.numCards; i ++){
+			if( s.hands[s.index][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[s.index][i].getColour());
+			int value = s.hands[s.index][i].getValue();
+			s.cardsLeftInDeck[colour][value-1] --;
 		}
 		
 		return playable;
