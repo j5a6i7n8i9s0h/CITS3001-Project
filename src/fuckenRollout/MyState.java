@@ -2,6 +2,8 @@ package fuckenRollout;
 
 import java.util.*;
 
+
+
 public class MyState implements Cloneable {
 	private int totalCards = 50;
 
@@ -50,7 +52,7 @@ public class MyState implements Cloneable {
 	private int nextPlayer = -1;
 	/** The fnal play of the game (for when the deck runs out) **/
 	private int finalAction = -1;
-	
+	private Action lastHint = null;
 	
 	public MyState(State s, int[][] cardsLeftInDeck, int[][] knownValues, Colour[][] knownColours, int[][] theyArrived) {
 		this.players = s.getPlayers();
@@ -178,10 +180,11 @@ public class MyState implements Cloneable {
 
 
 
-
 	public Action doAction(MyState s) {
 
 		index = nextPlayer;
+	    firstAction = false;
+	    
 		int maxValue = 0;
 		int bestHint = -1;
 		int hintPlayer = (index+1)%numPlayers;
@@ -207,7 +210,7 @@ public class MyState implements Cloneable {
 	    
 	    try{
 	      Action a = playKnown(s);
-	      //if(a== null) a = playLastHint(s);
+	      if(a== null) a = playLastHint(s);
 	      if(maxValue >= 14 || s.hints > 5){
 	    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 	    	  if(a==null) a = discardKnown(s);
@@ -218,12 +221,20 @@ public class MyState implements Cloneable {
 		    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 		      }
 	      }
+
+
+	      if(s.hints > 4){
+	    	  if(a==null) a = hint(s, hintPlayer, bestHint);
+	      }
 	      if(a==null) a = discardDuplicate(s);
-	      if(a==null) a = hint(s, hintPlayer, bestHint);
 	      if(a==null) a = discardOldest(s);
 	      if(a==null) a = guess(s);
 
-
+	      if(s.finalAction == s.order){
+	    	  if(s.getScore() < 5){
+	    		  System.out.println("idiot ai");
+	    	  }
+	      }
 	      return a;
 	    }
 	    catch(IllegalActionException e){
@@ -232,10 +243,8 @@ public class MyState implements Cloneable {
 	    }
 	}
 	
-
-
 	private Action discardDuplicate(MyState s) throws IllegalActionException {
-		if(hints > 3){return null;}
+		if(s.hints > 3){return null;}
 		int[] discards = new int[numCards];
 		for(int i = 0; i < numCards; i ++){
 			int value = knowValues[index][i];
@@ -272,7 +281,6 @@ public class MyState implements Cloneable {
 	}
 
 
-
 	private Action playKnown(MyState s) throws IllegalActionException{
 	    for(int i = 0; i<numCards; i++){
 	    	if(knowColours[index][i] != null && knowValues[index][i] != 0){
@@ -299,9 +307,29 @@ public class MyState implements Cloneable {
 	      }
 	      return null;
 	}
-/*	private Action playLastHint(State s) throws IllegalActionException {
-		if(s.getFuseTokens() < 3 || lastHint == null){return null;}
+	private Action playLastHint(MyState s) throws IllegalActionException {
 		
+		//dont risk it if we have no fuses.
+		if(s.fuse < 2 || s.lastHint == null){return null;}
+		
+		
+		//make sure that the hint is alteast playable somewhere
+		
+		if(lastHint.getType() == ActionType.HINT_COLOUR){
+			//if colour is already stacked or atleast 1 playable card exists
+			Colour hintedColour = lastHint.getColour();
+			int top = topFw(s, hintedColour);
+			if(top == 5||cardsLeftInDeck[mapColourToInt(hintedColour)][top] == 0){return null;}
+		}else{
+			boolean matchTop = false;
+			for(Colour c: Colour.values()){
+				if(topFw(s, c) == lastHint.getValue()-1){matchTop = true;}
+			}
+			//if no value has no playable moves
+			if(!matchTop){return null;}
+		}
+		
+		//chec that the hint highlights 1 card only, then assume we can play it
 		int card = 0;
 		int total = 0;
 		
@@ -313,12 +341,8 @@ public class MyState implements Cloneable {
 		}
 		if(total > 1){return null;}
 		
-		knowColours[index][card] = null;
-		knowValues[index][card] = 0;
-		theyArrived[index][card] = s.getOrder();
-		totalCards --;
         return new Action(index, toString(), ActionType.PLAY, card);
-	}*/
+	}
 	private Action discardKnown(MyState s) throws IllegalActionException{
 	    if (s.hints != 8) {
 	        for(int i = 0; i<numCards; i++){
@@ -364,7 +388,7 @@ public class MyState implements Cloneable {
 				if(c == null){continue;}
 				if(c.getValue() == hint - 4){
 					match[i] = true;
-					knowValues[p][i] = hint -4;
+					//knowValues[p][i] = hint -4;
 				}
 			}
 			
@@ -376,7 +400,7 @@ public class MyState implements Cloneable {
 				if(c == null){continue;}
 				if(c.getColour() == mapToColour(hint)){
 					match[i] = true;
-					knowColours[p][i] = mapToColour(hint);
+					//knowColours[p][i] = mapToColour(hint);
 				}
 			}
 			
@@ -715,7 +739,7 @@ public class MyState implements Cloneable {
 		
 	    for(int i = 0; i < numPlayers; i ++){
 	    	for(int j = 0; j < numCards; j ++){
-	    		theyArrived[i][j] = 1;
+	    		//theyArrived[i][j] = 1;
 	    		if(i != index){
 	    			Card c = s.hands[i][j];
 	    			if(c == null){continue;}

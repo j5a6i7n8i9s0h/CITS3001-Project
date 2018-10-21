@@ -29,10 +29,21 @@ class Node{
 	}
 
 	//Exploit vs explore 
+	
+	public void reshuffle(MyState previous) throws IllegalActionException, CloneNotSupportedException
+	{
+		previous.reDealCards();
+		state = previous.nextState(previous, action);
+	}
+	
 	public double getUCT()
 	{
 		return (double)this.score/(double)this.visits + agent.EXPLORE*Math.sqrt(
 				(double)Math.log(this.parent.visits)/(double)this.visits);
+	}
+	public double averageScore()
+	{
+		return (double)this.score/(double)this.visits;
 	}
 	
 }

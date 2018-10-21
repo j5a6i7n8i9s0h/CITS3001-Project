@@ -83,19 +83,19 @@ public class Hanabi{
    * */
   public static void main(String[] args){
     
-	double total = 2000;
+	double total = 3000;
 	double score = 0;
 	int max = 0;
 	int min = 25;
 	  
 	//Agent[] agents = {new agents.agent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent() , new agents.agent(), new agents.agent()};
-    Agent[] agents = {new agents.agent(), new agents.agent(),  new agents.agent()};
+    Agent[] agents = {new agents.agent(),new agents.agent(),new agents.agent()};
 	//Agent[] agents = {new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent()};
     
 /*	for(int i = 0; i < total; i++){
 		//Agent[] agents = {new agents.BasicAgent(), new agents.BasicAgent(), new agents.BasicAgent(),new agents.BasicAgent(),new agents.BasicAgent()};
 		//Agent[] agents = {new agents.agent(), new agents.RuansGreedyAgent(),  new agents.agent(),  new agents.RuansGreedyAgent()};
-		Agent[] agents = { new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(),new agents.RuansGreedyAgent(),new agents.RuansGreedyAgent()};
+		Agent[] agents = { new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent(),  new agents.RuansGreedyAgent(), new agents.RuansGreedyAgent()};
 		Hanabi game= new Hanabi(agents);
 		StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
 		int result = game.play(log);

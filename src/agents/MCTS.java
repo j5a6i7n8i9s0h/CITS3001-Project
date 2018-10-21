@@ -17,7 +17,7 @@ public class MCTS {
 	}
 	
 	public Action MCTSsearch() throws CloneNotSupportedException, IllegalActionException{
-		long timeLimit = System.currentTimeMillis() + 280;
+		long timeLimit = System.currentTimeMillis() + 380;
 		Node currentNode = root;
 		while(System.currentTimeMillis() < timeLimit){
 			currentNode = Select(root);
@@ -25,9 +25,21 @@ public class MCTS {
 		}
 
 		//System.out.println("done");
-		Action a= bestChild(root).action;
+		Action a= bestChildtoPlay(root).action;
 		return a;
 
+	}
+
+	private Node bestChildtoPlay(Node rootNode) {
+		Node bestSelection = null;
+		double score = 0;
+		for(Node child: rootNode.children){
+			if(child.averageScore() > score){
+				score = child.averageScore();
+				bestSelection = child;
+			}
+		}
+		return bestSelection;
 	}
 
 	private void BackPropogation(Node currentNode, int rollout) {
@@ -67,6 +79,7 @@ public class MCTS {
 			if(currentNode.expandable.isEmpty()||currentNode.children.size()==agent.BRANCH_FACTOR){
 				Node bestChild = bestChild(currentNode);
 				if(bestChild==null) break;
+				//bestChild.reshuffle(currentNode.state);
 				currentNode = bestChild;
 			}else{
 				return Expand(currentNode);

@@ -48,11 +48,20 @@ public class rolloutAction{
 		    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 		      }
 	      }
-	      //if(a==null) a = hint(s, hintPlayer, bestHint);
+
+
+	      if(s.hints > 4){
+	    	  if(a==null) a = hint(s, hintPlayer, bestHint);
+	      }
+	      if(a==null) a = discardDuplicate(s);
 	      if(a==null) a = discardOldest(s);
 	      if(a==null) a = guess(s);
 
-
+	      if(s.finalAction == s.order){
+	    	  if(s.getScore() < 5){
+	    		 // System.out.println("idiot ai");
+	    	  }
+	      }
 	      return a;
 	    }
 	    catch(IllegalActionException e){
@@ -61,6 +70,42 @@ public class rolloutAction{
 	    }
 	}
 	
+	private static Action discardDuplicate(MyState s) throws IllegalActionException {
+		if(s.hints > 3){return null;}
+		int[] discards = new int[s.numCards];
+		for(int i = 0; i < s.numCards; i ++){
+			int value = s.knownValues[s.index][i];
+			Colour colour = s.knownColours[s.index][i];
+			if(value > 0 && colour != null){
+				if(s.cardsLeftInDeck[mapColourToInt(colour)][value-1] > 1){
+					return new Action(s.index, s.toString(), ActionType.DISCARD,i);
+				}
+			}
+			else if(value > 0){
+				boolean canDiscard = true;
+				for(Colour c: Colour.values()){
+					if(topFw(s,c) <= value && s.cardsLeftInDeck[mapColourToInt(c)][value-1] == 1){
+						canDiscard = false;
+					}
+				}
+				if(canDiscard){
+					return new Action(s.index, s.toString(), ActionType.DISCARD,i);
+				}
+			}else if(colour != null){
+				boolean canDiscard = true;
+				for(int v = 0; v < 5; v++){
+					if(topFw(s,colour) < v && s.cardsLeftInDeck[mapColourToInt(colour)][v] == 1){
+						canDiscard = false;
+					}
+				}
+				if(canDiscard){
+					return new Action(s.index, s.toString(), ActionType.DISCARD,i);
+				}
+			}
+		}
+		
+		return null;
+	}
 
 
 	private static Action playKnown(MyState s) throws IllegalActionException{
@@ -89,9 +134,29 @@ public class rolloutAction{
 	      }
 	      return null;
 	}
-/*	private Action playLastHint(State s) throws IllegalActionException {
-		if(s.getFuseTokens() < 3 || lastHint == null){return null;}
+/*	private static Action playLastHint(MyState s) throws IllegalActionException {
 		
+		//dont risk it if we have no fuses.
+		if(s.fuse < 2 || s.lastHint == null){return null;}
+		
+		
+		//make sure that the hint is alteast playable somewhere
+		
+		if(lastHint.getType() == ActionType.HINT_COLOUR){
+			//if colour is already stacked or atleast 1 playable card exists
+			Colour hintedColour = lastHint.getColour();
+			int top = topFw(s, hintedColour);
+			if(top == 5||s.cardsLeftInDeck[mapColourToInt(hintedColour)][top] == 0){return null;}
+		}else{
+			boolean matchTop = false;
+			for(Colour c: Colour.values()){
+				if(topFw(s, c) == lastHint.getValue()-1){matchTop = true;}
+			}
+			//if no value has no playable moves
+			if(!matchTop){return null;}
+		}
+		
+		//chec that the hint highlights 1 card only, then assume we can play it
 		int card = 0;
 		int total = 0;
 		
@@ -103,10 +168,6 @@ public class rolloutAction{
 		}
 		if(total > 1){return null;}
 		
-		s.knownColours[s.index][card] = null;
-		s.knownValues[s.index][card] = 0;
-		s.theyArrived[s.index][card] = s.getOrder();
-		totalCards --;
         return new Action(s.index, s.toString(), ActionType.PLAY, card);
 	}*/
 	private static Action discardKnown(MyState s) throws IllegalActionException{
@@ -154,6 +215,7 @@ public class rolloutAction{
 				if(c == null){continue;}
 				if(c.getValue() == hint - 4){
 					match[i] = true;
+					//s.knownValues[p][i] = hint -4;
 				}
 			}
 			
@@ -165,6 +227,7 @@ public class rolloutAction{
 				if(c == null){continue;}
 				if(c.getColour() == mapToColour(hint)){
 					match[i] = true;
+					//s.knownColours[p][i] = mapToColour(hint);
 				}
 			}
 			
@@ -264,7 +327,6 @@ public class rolloutAction{
 					
 				}
 				numTotal = s.totalCards;
-
 			}
 			
 			if(numPlayable != 0){
@@ -504,7 +566,7 @@ public class rolloutAction{
 		
 	    for(int i = 0; i < s.numPlayers; i ++){
 	    	for(int j = 0; j < s.numCards; j ++){
-	    		s.theyArrived[i][j] = 1;
+	    		//s.theyArrived[i][j] = 1;
 	    		if(i != s.index){
 	    			Card c = s.hands[i][j];
 	    			if(c == null){continue;}
@@ -548,25 +610,11 @@ public class rolloutAction{
 		
 		boolean playable = true;
 		
-		for(int i = 0; i < s.numCards; i ++){
-			if( s.hands[s.index][i] == null){continue;}
-			int colour = mapColourToInt(s.hands[s.index][i].getColour());
-			int v = s.hands[s.index][i].getValue();
-			s.cardsLeftInDeck[colour][value-1] ++;
-		}
-		
 		for(int j = 0 ; j < 5; j++){
 			if(!canPlay[j]){
 				int inPlay = s.cardsLeftInDeck[j][value-1];
 				if(inPlay != 0){playable = false;}
 			}
-		}
-		
-		for(int i = 0; i < s.numCards; i ++){
-			if( s.hands[s.index][i] == null){continue;}
-			int colour = mapColourToInt(s.hands[s.index][i].getColour());
-			int v = s.hands[s.index][i].getValue();
-			s.cardsLeftInDeck[colour][value-1] --;
 		}
 		
 		return playable;
@@ -583,25 +631,11 @@ public class rolloutAction{
 	    
 		boolean playable = true;
 		
-		for(int i = 0; i < s.numCards; i ++){
-			if( s.hands[s.index][i] == null){continue;}
-			int colour = mapColourToInt(s.hands[s.index][i].getColour());
-			int value = s.hands[s.index][i].getValue();
-			s.cardsLeftInDeck[colour][value-1] ++;
-		}
-		
 		for(int j = 0 ; j < 5; j++){
 			if(j != toPlay){
 				int inPlay = s.cardsLeftInDeck[mapColourToInt(c)][j];
 				if(inPlay != 0){playable = false;}
 			}
-		}
-		
-		for(int i = 0; i < s.numCards; i ++){
-			if( s.hands[s.index][i] == null){continue;}
-			int colour = mapColourToInt(s.hands[s.index][i].getColour());
-			int value = s.hands[s.index][i].getValue();
-			s.cardsLeftInDeck[colour][value-1] --;
 		}
 		
 		return playable;
@@ -656,7 +690,7 @@ public class rolloutAction{
 	
 
 
-	static int mapColourToInt(Colour c){
+	private static int mapColourToInt(Colour c){
 	    switch(c){
 	      case BLUE: return 0;
 	      case RED: return 1;

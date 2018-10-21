@@ -90,9 +90,6 @@ public class MyState implements Cloneable {
  	    for(int i = 0; i < numCards; i ++){
  	      if(knownValues[rootIndex][i]> 0 && knownColours[rootIndex][i] != null){
  	        cardsLeftInDeck[mapColourToInt(knownColours[rootIndex][i])][knownValues[rootIndex][i]-1]--;
- 	        if(cardsLeftInDeck[mapColourToInt(knownColours[rootIndex][i])][knownValues[rootIndex][i]-1] < 0){
- 	        	System.out.println("help");
- 	        }
  	        hands[rootIndex][i] = new Card(knownColours[rootIndex][i], knownValues[rootIndex][i]);
  	      }
  	    }
@@ -141,7 +138,8 @@ public class MyState implements Cloneable {
  	    for(int i = 0; i < numCards; i ++){
  	      if(hands[rootIndex][i] == null){
  	    	  if(!deck.isEmpty()){
- 	    		  hands[rootIndex][i] = deck.pop();
+ 	    		 hands[rootIndex][i] = deck.pop();
+ 	    		 cardsLeftInDeck[mapColourToInt(hands[rootIndex][i].getColour())][hands[rootIndex][i].getValue()-1]--;
  	    	  }
  	      }
  	    }
@@ -222,9 +220,9 @@ public class MyState implements Cloneable {
 				next.discards.push(c);
 				next.fuse--;
 			}
-		    if(!previous.deck.isEmpty()) next.hands[action.getPlayer()][action.getCard()] = next.deck.pop();
+		    if(!next.deck.isEmpty()) next.hands[action.getPlayer()][action.getCard()] = next.deck.pop();
 		    else next.hands[action.getPlayer()][action.getCard()] = null;
-		    if(previous.deck.isEmpty() && previous.finalAction==-1) next.finalAction = previous.order+numPlayers;
+		    if(next.deck.isEmpty() && previous.finalAction==-1) next.finalAction = previous.order+numPlayers;
 
 			Card newC = next.hands[action.getPlayer()][action.getCard()];
 			if(newC != null){
@@ -240,9 +238,9 @@ public class MyState implements Cloneable {
 		case DISCARD:
 			c = previous.hands[action.getPlayer()][action.getCard()];
 			next.discards.push(c);
-		    if(!previous.deck.isEmpty()) next.hands[action.getPlayer()][action.getCard()] = next.deck.pop();
+		    if(!next.deck.isEmpty()) next.hands[action.getPlayer()][action.getCard()] = next.deck.pop();
 		    else next.hands[action.getPlayer()][action.getCard()] = null;
-		    if(previous.deck.isEmpty() && previous.finalAction==-1) next.finalAction = next.order+numPlayers;
+		    if(next.deck.isEmpty() && previous.finalAction==-1) next.finalAction = next.order+numPlayers;
 			if (previous.hints < 8)
 				next.hints++;
 			Card newD = next.hands[action.getPlayer()][action.getCard()];
@@ -312,80 +310,37 @@ public class MyState implements Cloneable {
 
 	public int Rollout() throws CloneNotSupportedException, IllegalActionException {
 
-    MyState s = (MyState) this.clone();
-	for(int i = 0; i < s.numCards; i ++){
-		if( s.hands[rootIndex][i] == null){continue;}
-		int colour = mapColourToInt(s.hands[rootIndex][i].getColour());
-		int value = s.hands[rootIndex][i].getValue();
-		s.cardsLeftInDeck[colour][value-1] ++;
-	}
-	s.dealMyCards();
-    while(!s.gameOver()){
-    	Action a = rolloutAction.doAction(s);
-	    s = (MyState) nextState(s, a);  
-
-	    	//System.out.println();
-	    }
-		return s.getScore() - penalty;
-	}
-
-	public Action doAction(MyState s) {
-		s.index = s.nextPlayer;
-
-		int maxValue = 0;
-		int bestHint = -1;
-		int hintPlayer = (s.index+1)%numPlayers;
-
+		MyState s = (MyState) this.clone();
+		for(int i = 0; i < s.numCards; i ++){
+			if( s.hands[rootIndex][i] == null){continue;}
+			int colour = mapColourToInt(s.hands[rootIndex][i].getColour());
+			int value = s.hands[rootIndex][i].getValue();
+			s.cardsLeftInDeck[colour][value-1] ++;
+		}
+		s.dealMyCards();
 		
-		for(int i = 0; i < 10; i ++){
-			int value = evaluateHint(s, hintPlayer , i);
-			if(value > maxValue){
-				maxValue = value;
-				bestHint = i;
+		while(!s.gameOver()){
+			for(int i = 0; i < s.numCards; i ++){
+				if( s.hands[s.nextPlayer][i] == null){continue;}
+				int colour = mapColourToInt(s.hands[s.nextPlayer][i].getColour());
+				int value = s.hands[s.nextPlayer][i].getValue();
+				s.cardsLeftInDeck[colour][value-1] ++;
 			}
-		}
-
-		if(numPlayers > 2){
-			for(int i = 0; i < 10; i ++){
-				int value = evaluateHint(s, hintPlayer, i);
-				if(value - 6 > maxValue){
-					maxValue = value - 6; // prioritise next player
-					bestHint = i;
-					hintPlayer = (s.index+2)%numPlayers;
-				}
+			
+			
+			Action a = rolloutAction.doAction(s);
+			
+			int putBack = s.index;;
+			for(int i = 0; i < s.numCards; i ++){
+				if( s.hands[putBack][i] == null){continue;}
+				int colour = mapColourToInt(s.hands[putBack][i].getColour());
+				int value = s.hands[putBack][i].getValue();
+				s.cardsLeftInDeck[colour][value-1] --;
 			}
+			
+		    s = (MyState) nextState(s, a);   
 		}
-	    
-
-		try {
-			Action a = playKnown(s);
-
-			if (maxValue >= 15 || s.hints > 5){
-				if (a == null)
-					a = hint(s, hintPlayer, bestHint);
-				if (a == null)
-					a = discardKnown(s);
-
-			} else {
-				if (a == null)
-					a = discardKnown(s);
-				if (maxValue > 5 || s.hints > 4) {
-					if (a == null)
-						a = hint(s, hintPlayer, bestHint);
-				}
-			}
-
-			if (a == null)
-				a = discardOldest(s);
-			if (a == null)
-				a = hint(s, hintPlayer, bestHint);
-			if (a == null)
-				a = guess(s);
-			return a;
-		} catch (IllegalActionException e) {
-			e.printStackTrace();
-			throw new RuntimeException("Something has gone very wrong");
-		}
+		return s.getScore() - penalty;
 	}
 
 	private Action playKnown(MyState s) throws IllegalActionException {
@@ -501,12 +456,6 @@ public class MyState implements Cloneable {
 		if (oldest == -1) {
 			return null;
 		} else {
-			s.knownColours[s.index][oldest] = null;
-			s.knownValues[s.index][oldest] = 0;
-
-			s.theyArrived[s.index][oldest] = s.order;
-			s.totalCards --;
-
 			return new Action(s.index, toString(), ActionType.DISCARD, oldest);
 		}
 
@@ -986,7 +935,7 @@ public class MyState implements Cloneable {
 		}
 	}
 	
-	public int discardcard(int i) {
+/*	public int discardcard(int i) {
 		i=i%this.numCards;
 		if(this.hints>7) return Integer.MIN_VALUE;
 		Colour c = this.knownColours[this.nextPlayer][i];
@@ -1024,7 +973,7 @@ public class MyState implements Cloneable {
 		{
 			return this.order-order;
 		}
-	}
+	}*/
 	
 	
 
@@ -1102,7 +1051,7 @@ public class MyState implements Cloneable {
 				if(score!=Integer.MIN_VALUE) 
 					bestmoves.add(new Move(a,score));
 			}else if(i>=numCards && i<numCards*2) {
-				score=discardcard(i);
+				score=1;
 				Action a=new Action(nextPlayer,
 						players[nextPlayer],
 						ActionType.DISCARD,i%this.numCards);
@@ -1184,5 +1133,16 @@ public class MyState implements Cloneable {
  		      return s;
 		    }
 		    catch(CloneNotSupportedException e){return null;}	
+	}
+
+	public void reDealCards() {
+		for(int i = 0; i < numCards; i ++){
+			if( hands[rootIndex][i] == null){continue;}
+			int colour = mapColourToInt(hands[rootIndex][i].getColour());
+			int value = hands[rootIndex][i].getValue();
+			cardsLeftInDeck[colour][value-1] ++;
+		}
+		dealMyCards();
+		
 	}
 }

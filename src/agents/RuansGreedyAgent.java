@@ -207,7 +207,7 @@ public class RuansGreedyAgent implements Agent{
 	    try{
 	      Action a = playKnown(s);
 	      if(a== null) a = playLastHint(s);
-	      if(maxValue >= 14 || s.getHintTokens() > 5){
+	      if(maxValue >= 15 || s.getHintTokens() > 5){
 	    	  if(a==null) a = hint(s, hintPlayer, bestHint);
 	    	  if(a==null) a = discardKnown(s);
 	    	  
